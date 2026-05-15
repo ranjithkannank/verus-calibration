@@ -1,4 +1,7 @@
 target/
 *.smt2
+*.rlib
+*.rmeta
+*.dylib
 .verus-log/
 .DS_Store
