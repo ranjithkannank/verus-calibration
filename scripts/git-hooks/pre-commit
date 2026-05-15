@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# verus-calibration pre-commit hook
+#
+# Defense-in-depth boundary for the Ralph loop. Enforces three things:
+#   1. Path whitelist — staged files must be under approved directories.
+#   2. Cheat-token detection — staged exercise .rs files must not introduce
+#      `assume(`, `#[verifier::external_body]`, `unreachable!()`, etc.
+#   3. Spec preservation — every `requires`/`ensures` line that existed at
+#      `spec-frozen-<exercise>` must still exist verbatim in the staged
+#      version of `exercises/<exercise>.rs`.
+#
+# Bypass with `git commit --no-verify` if you (a human) know you need to.
+# The Claude Code tool whitelist in ralph/run-exercise.sh denies that flag
+# to the agent, so the hook stays load-bearing for autonomous runs.
+
+set -u
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$STAGED" ] && exit 0   # empty commit, nothing to check
+
+fail=0
+errors=()
+
+# --- 1. Path whitelist --------------------------------------------------------
+
+allowed_path() {
+  case "$1" in
+    exercises/*.rs|exercises/*.design.md)       return 0 ;;
+    logs/*)                                      return 0 ;;
+    writeup/*)                                   return 0 ;;
+    AGENTS.md|ORCHESTRATION.md|README.md)        return 0 ;;
+    ralph/*|scripts/*|.claude/*)                 return 0 ;;
+    .gitignore)                                  return 0 ;;
+    *)                                           return 1 ;;
+  esac
+}
+
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  if ! allowed_path "$f"; then
+    errors+=("[path]  outside whitelist: $f")
+    fail=1
+  fi
+done <<< "$STAGED"
+
+# --- 2. Cheat-token detection -------------------------------------------------
+
+while IFS= read -r f; do
+  case "$f" in
+    exercises/*.rs) ;;
+    *) continue ;;
+  esac
+
+  added=$(git diff --cached -- "$f" | grep -E '^\+[^+]' || true)
+  [ -z "$added" ] && continue
+
+  if echo "$added" | grep -qE '\bassume[[:space:]]*\('; then
+    errors+=("[cheat] $f: introduces 'assume(...)' — verification bypass")
+    fail=1
+  fi
+  if echo "$added" | grep -qE 'external_body'; then
+    errors+=("[cheat] $f: introduces 'external_body' — verification bypass")
+    fail=1
+  fi
+  if echo "$added" | grep -qE 'unreachable!\(\)'; then
+    errors+=("[cheat] $f: introduces 'unreachable!()' — restructure instead")
+    fail=1
+  fi
+  if echo "$added" | grep -qE '\bpanic!\('; then
+    errors+=("[cheat] $f: introduces 'panic!(...)' — restructure instead")
+    fail=1
+  fi
+  if echo "$added" | grep -qE 'assume_specification'; then
+    errors+=("[cheat] $f: introduces 'assume_specification' — verification bypass")
+    fail=1
+  fi
+done <<< "$STAGED"
+
+# --- 3. Spec preservation -----------------------------------------------------
+
+while IFS= read -r f; do
+  case "$f" in
+    exercises/*.rs) ;;
+    *) continue ;;
+  esac
+  ex=$(basename "$f" .rs)
+  tag="spec-frozen-${ex}"
+
+  git rev-parse --verify --quiet "$tag" >/dev/null 2>&1 || continue
+
+  # Every line from the frozen version whose first non-whitespace token is
+  # `requires` or `ensures` must appear verbatim (whitespace and all) in the
+  # staged file. Using -Fx for exact-line match means cosmetic reformatting
+  # that touches these lines is also rejected — intentionally strict.
+  frozen=$(git show "$tag:$f" 2>/dev/null | grep -E '^[[:space:]]*(requires|ensures)([^a-zA-Z0-9_]|$)')
+  [ -z "$frozen" ] && continue
+
+  staged_content=$(git show ":$f" 2>/dev/null || cat "$f")
+
+  while IFS= read -r line; do
+    if ! echo "$staged_content" | grep -qFx "$line"; then
+      errors+=("[spec]  $f: frozen line missing verbatim: '$line'")
+      fail=1
+    fi
+  done <<< "$frozen"
+done <<< "$STAGED"
+
+# --- Report ------------------------------------------------------------------
+
+if [ $fail -ne 0 ]; then
+  echo
+  echo "Pre-commit hook rejected this commit:"
+  echo
+  for e in "${errors[@]}"; do
+    echo "  $e"
+  done
+  echo
+  echo "If you (a human, knowingly) need to bypass, use: git commit --no-verify"
+  echo "The Ralph agent is denied that flag by the Claude Code tool whitelist."
+  echo
+  exit 1
+fi
+
+exit 0

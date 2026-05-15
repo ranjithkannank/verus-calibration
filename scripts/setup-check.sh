@@ -75,6 +75,13 @@ check "tag: spec-frozen-bounded_log"   "git rev-parse --verify --quiet spec-froz
 check "tag: spec-frozen-quorum_count"  "git rev-parse --verify --quiet spec-frozen-quorum_count"
 
 echo
+echo "Sandbox boundary (pre-commit hook):"
+check "hook source present"            "test -f scripts/git-hooks/pre-commit"
+check "hook installed (.git/hooks/)"   "test -x .git/hooks/pre-commit"
+check "hook is symlink to source"      "test -L .git/hooks/pre-commit"
+check "hook syntax is valid bash"      "bash -n .git/hooks/pre-commit"
+
+echo
 echo "Verus end-to-end (verifies a tiny example):"
 sanity_dir=$(mktemp -d)
 trap 'rm -rf "$sanity_dir"; rm -f "$tmp"' EXIT
@@ -120,6 +127,7 @@ Not ready. Common fixes:
   - uncommitted changes: commit the scaffold first so the tags pin a known state
   - tiny example fails: Verus toolchain is broken — re-check the Rust nightly
     and that vstd is on the verus search path
+  - pre-commit hook missing: bash scripts/install-hooks.sh
 HINTS
   exit 1
 fi
@@ -127,11 +135,16 @@ fi
 cat <<'NEXT'
 Ready. Saturday morning is go.
 
-Suggested first command from the repo root:
+Smoke test (cheap, no claude calls):
 
-  claude "Begin work on exercises/binary_search.rs following ORCHESTRATION.md.
-          Drive the state machine: architect, then implementer, then reviewer.
-          Stop after binary_search is either DONE or BLOCKED."
+  ./ralph/test-state-machine.sh           # state classification unit tests
+  ./ralph/run-exercise.sh binary_search --dry-run
 
-After that finishes, run the same command with bounded_log, then quorum_count.
+Live run (drives the full Ralph loop):
+
+  ./ralph/run-exercise.sh binary_search   # one exercise
+  ./ralph/run-all.sh                      # all three in sequence
+
+Each call uses fresh context (--no-session-persistence), so the loop is
+resumable — Ctrl-C any time, re-run, it picks up at the next state.
 NEXT

@@ -135,25 +135,76 @@ classify_state() {
   echo WORK
 }
 
-# Fire a single claude -p call. Args:
+# Per-role allowed tool lists. Strict whitelist — anything off these lists is
+# denied. Bash patterns use Claude Code's glob syntax: `Bash(verus *)` matches
+# any command that starts with `verus`.
+ALLOWED_ARCHITECT=(
+  Read Write Glob Grep
+  "Bash(git add *)" "Bash(git commit *)"
+  "Bash(git diff *)" "Bash(git log *)" "Bash(git status *)"
+  "Bash(git show *)" "Bash(git rev-parse *)"
+  "Bash(ls *)" "Bash(cat *)" "Bash(wc *)"
+)
+
+ALLOWED_IMPLEMENTER=(
+  Read Edit Write Glob Grep
+  "Bash(verus *)"
+  "Bash(git add *)" "Bash(git commit *)"
+  "Bash(git diff *)" "Bash(git log *)" "Bash(git status *)"
+  "Bash(git show *)" "Bash(git rev-parse *)"
+  "Bash(ls *)" "Bash(cat *)" "Bash(mkdir -p logs/*)" "Bash(mkdir -p logs/*/*)"
+  "Bash(echo *)" "Bash(head *)" "Bash(tail *)" "Bash(wc *)"
+  "Bash(grep *)" "Bash(rg *)"
+)
+
+ALLOWED_REVIEWER=(
+  Read Write Glob Grep
+  "Bash(git diff *)" "Bash(git log *)" "Bash(git status *)"
+  "Bash(git show *)" "Bash(git rev-parse *)"
+  "Bash(git add *)" "Bash(git commit *)"
+  "Bash(ls *)" "Bash(cat *)" "Bash(grep *)" "Bash(wc *)"
+)
+
+# Always-denied. Includes hook-bypass and any-network/install patterns.
+# Explicit denies even though the allowlist already rejects them — defense
+# in depth and clearer error messages.
+DISALLOWED_TOOLS=(
+  WebFetch WebSearch Task NotebookEdit
+  "Bash(rm *)" "Bash(rmdir *)" "Bash(mv *)" "Bash(chmod *)" "Bash(chown *)"
+  "Bash(git push*)" "Bash(git reset*)" "Bash(git rebase*)"
+  "Bash(git checkout*)" "Bash(git restore*)" "Bash(git revert*)"
+  "Bash(git config*)" "Bash(git -c*)"
+  "Bash(*--no-verify*)" "Bash(*-n -m*)"
+  "Bash(curl*)" "Bash(wget*)" "Bash(nc *)" "Bash(ssh*)" "Bash(scp*)"
+  "Bash(brew*)" "Bash(npm*)" "Bash(pip*)" "Bash(cargo install*)"
+  "Bash(sudo*)" "Bash(su *)"
+)
+
+# Fire a single claude -p call with role-scoped permissions.
+# Args:
 #   $1 = role label (for logging)
 #   $2 = model
 #   $3 = agent name (must match a file in .claude/agents/)
 #   $4 = task prompt (string)
+#   $5 = allowed-tools array name (ALLOWED_ARCHITECT | ALLOWED_IMPLEMENTER | ALLOWED_REVIEWER)
 fire_claude() {
-  local role="$1" model="$2" agent="$3" prompt="$4"
+  local role="$1" model="$2" agent="$3" prompt="$4" allowed_var="$5"
   echo
-  echo "  > role=$role  model=$model  agent=$agent"
+  echo "  > role=$role  model=$model  agent=$agent  allowed=$allowed_var"
   if [ "$DRY_RUN" -eq 1 ]; then
     echo "  > (dry-run; not invoking claude)"
     return 0
   fi
+  # Dereference the array name into a local array (bash 3.2 compatible).
+  eval "local allowed=(\"\${${allowed_var}[@]}\")"
   claude -p \
     --agent "$agent" \
     --model "$model" \
     --no-session-persistence \
     --permission-mode acceptEdits \
     --max-budget-usd "$PER_CALL_BUDGET" \
+    --allowedTools "${allowed[@]}" \
+    --disallowedTools "${DISALLOWED_TOOLS[@]}" \
     "$prompt"
 }
 
@@ -212,7 +263,8 @@ Read in this order:
 Make EXACTLY ONE new attempt:
 
   a. Edit $EXFILE — implement or refine.
-  b. Run: verus $EXFILE --crate-type=lib 2>&1 | tee $RAWDIR/attempt-${attempt_num}.txt
+  b. Run: verus $EXFILE --crate-type=lib > $RAWDIR/attempt-${attempt_num}.txt 2>&1
+     (You can `cat` the file afterwards to inspect the output.)
   c. Append an entry to $ATTEMPTS using the format in AGENTS.md.
   d. Write $STATUS with exactly one of these tokens:
        - verus_passed     (verus exited 0)
@@ -321,23 +373,23 @@ while [ $iteration -lt $MAX_OUTER_ITERATIONS ]; do
       ;;
 
     THINK)
-      fire_claude THINK "$MODEL_ARCHITECT" architect "$(prompt_think)"
+      fire_claude THINK "$MODEL_ARCHITECT" architect "$(prompt_think)" ALLOWED_ARCHITECT
       ;;
 
     THINK_REVISE)
-      fire_claude THINK_REVISE "$MODEL_ARCHITECT" architect "$(prompt_think_revise)"
+      fire_claude THINK_REVISE "$MODEL_ARCHITECT" architect "$(prompt_think_revise)" ALLOWED_ARCHITECT
       ;;
 
     WORK)
-      fire_claude WORK "$MODEL_IMPLEMENTER" implementer "$(prompt_work)"
+      fire_claude WORK "$MODEL_IMPLEMENTER" implementer "$(prompt_work)" ALLOWED_IMPLEMENTER
       ;;
 
     WORK_AFTER_REJECT)
-      fire_claude WORK_AFTER_REJECT "$MODEL_IMPLEMENTER" implementer "$(prompt_work_after_reject)"
+      fire_claude WORK_AFTER_REJECT "$MODEL_IMPLEMENTER" implementer "$(prompt_work_after_reject)" ALLOWED_IMPLEMENTER
       ;;
 
     REVIEW)
-      fire_claude REVIEW "$MODEL_REVIEWER" reviewer "$(prompt_review)"
+      fire_claude REVIEW "$MODEL_REVIEWER" reviewer "$(prompt_review)" ALLOWED_REVIEWER
       # Status is consumed once the reviewer has run.
       rm -f "$STATUS"
       ;;
