@@ -92,7 +92,7 @@ fn add_one(x: u32) -> (result: u32)
 
 } // verus!
 EOF
-check "verus verifies tiny example"  "verus --crate-type=lib '$sanity_dir/sanity.rs'"
+check "verus verifies tiny example"  "(cd '$sanity_dir' && verus --crate-type=lib sanity.rs)"
 
 echo
 echo "Working tree:"
