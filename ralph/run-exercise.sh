@@ -19,13 +19,18 @@
 set -u
 
 DRY_RUN=0
-if [ "${2:-}" = "--dry-run" ]; then
-  DRY_RUN=1
-fi
+ONCE=0
+for arg in "${@:2}"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --once)    ONCE=1 ;;
+    *) echo "unknown flag: $arg" >&2; exit 2 ;;
+  esac
+done
 
 if [ $# -lt 1 ]; then
-  echo "usage: $0 <exercise> [--dry-run]" >&2
-  echo "  e.g. $0 binary_search" >&2
+  echo "usage: $0 <exercise> [--dry-run] [--once]" >&2
+  echo "  --once: exit cleanly after one iteration (probe mode)" >&2
   exit 2
 fi
 
@@ -55,6 +60,14 @@ esac
 
 # Hard outer-iteration ceiling (covers THINK/REVIEW/ESCALATE overhead).
 MAX_OUTER_ITERATIONS=$((ATTEMPT_CAP + 8))
+if [ $ONCE -eq 1 ]; then
+  MAX_OUTER_ITERATIONS=1
+fi
+
+# Per-iteration agent output goes here so the operator's terminal stays
+# readable and (when invoked from another claude session) doesn't blow up
+# the parent's context.
+mkdir -p "logs/${EXERCISE}/ralph"
 
 # Models — keep in sync with .claude/agents/*.md frontmatter.
 MODEL_ARCHITECT="claude-opus-4-7"
@@ -197,6 +210,10 @@ fire_claude() {
   fi
   # Dereference the array name into a local array (bash 3.2 compatible).
   eval "local allowed=(\"\${${allowed_var}[@]}\")"
+  local role_lc
+  role_lc=$(echo "$role" | tr '[:upper:]' '[:lower:]')
+  local iter_log="logs/${EXERCISE}/ralph/iter-${iteration}-${role_lc}.log"
+  echo "  > log: $iter_log"
   claude -p \
     --agent "$agent" \
     --model "$model" \
@@ -205,7 +222,11 @@ fire_claude() {
     --max-budget-usd "$PER_CALL_BUDGET" \
     --allowedTools "${allowed[@]}" \
     --disallowedTools "${DISALLOWED_TOOLS[@]}" \
-    "$prompt"
+    "$prompt" > "$iter_log" 2>&1
+  local rc=$?
+  echo "  > exit: $rc  (head of log:)"
+  head -5 "$iter_log" | sed 's/^/      /'
+  return $rc
 }
 
 # --- prompts ------------------------------------------------------------------
@@ -403,6 +424,11 @@ while [ $iteration -lt $MAX_OUTER_ITERATIONS ]; do
   # Tiny pause so filesystem writes settle before the next classification.
   sleep 1
 done
+
+if [ $ONCE -eq 1 ]; then
+  echo "Exited cleanly after one iteration (--once)."
+  exit 0
+fi
 
 log_blocked "hit hard outer ceiling of $MAX_OUTER_ITERATIONS iterations"
 echo "BLOCKED — outer ceiling hit."
