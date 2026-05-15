@@ -31,9 +31,9 @@ allowed_path() {
     exercises/*.rs|exercises/*.design.md)       return 0 ;;
     logs/*)                                      return 0 ;;
     writeup/*)                                   return 0 ;;
-    AGENTS.md|ORCHESTRATION.md|README.md)        return 0 ;;
-    ralph/*|scripts/*|.claude/*)                 return 0 ;;
-    .gitignore)                                  return 0 ;;
+    AGENTS.md|ORCHESTRATION.md|README.md|LICENSE) return 0 ;;
+    ralph/*|scripts/*|.claude/*)                   return 0 ;;
+    .gitignore)                                    return 0 ;;
     *)                                           return 1 ;;
   esac
 }
