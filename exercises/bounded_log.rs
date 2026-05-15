@@ -1,0 +1,85 @@
+// Exercise 2: verified bounded append-only message log.
+//
+// This is the meat. The spec includes a frame property — append must not
+// overwrite existing entries — which is the kind of obligation SMT solvers
+// handle unevenly. How the loop deals with it is the most interesting data
+// point of the weekend.
+//
+// The spec below is FROZEN. Iteration cap: 20. See AGENTS.md.
+
+use vstd::prelude::*;
+
+verus! {
+
+pub type Message = u64;
+
+pub struct Log {
+    cap: usize,
+    msgs: Vec<Message>,
+}
+
+impl Log {
+    pub closed spec fn capacity(&self) -> nat {
+        self.cap as nat
+    }
+
+    pub closed spec fn view(&self) -> Seq<Message> {
+        self.msgs@
+    }
+
+    pub closed spec fn well_formed(&self) -> bool {
+        self.msgs.len() <= self.cap
+    }
+
+    pub fn new(capacity: usize) -> (result: Self)
+        ensures
+            result.well_formed(),
+            result.capacity() == capacity as nat,
+            result.view().len() == 0,
+    {
+        // TODO(loop): fill in. Do not modify any spec above.
+        unimplemented!()
+    }
+
+    pub fn len(&self) -> (result: usize)
+        requires self.well_formed(),
+        ensures result as nat == self.view().len(),
+    {
+        // TODO(loop)
+        unimplemented!()
+    }
+
+    pub fn get(&self, index: usize) -> (result: Option<Message>)
+        requires self.well_formed(),
+        ensures
+            (index as int) < self.view().len() ==>
+                result == Some::<Message>(self.view()[index as int]),
+            (index as int) >= self.view().len() ==> result.is_none(),
+    {
+        // TODO(loop)
+        unimplemented!()
+    }
+
+    pub fn append(&mut self, msg: Message) -> (result: Result<(), ()>)
+        requires old(self).well_formed(),
+        ensures
+            self.well_formed(),
+            self.capacity() == old(self).capacity(),
+            result.is_ok() ==> {
+                &&& self.view().len() == old(self).view().len() + 1
+                &&& self.view()[old(self).view().len() as int] == msg
+                // Frame property: existing entries are unchanged.
+                &&& forall|i: int| 0 <= i < old(self).view().len() ==>
+                        self.view()[i] == old(self).view()[i]
+            },
+            result.is_err() ==> {
+                &&& old(self).view().len() == old(self).capacity()
+                &&& self.view() == old(self).view()
+            },
+    {
+        // TODO(loop)
+        unimplemented!()
+    }
+}
+
+} // verus!

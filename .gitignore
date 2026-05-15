@@ -1,0 +1,4 @@
+target/
+*.smt2
+.verus-log/
+.DS_Store
