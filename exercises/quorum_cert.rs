@@ -117,11 +117,16 @@ pub fn verify_qc_structure(qc: &QuorumCert, n: u32) -> (result: bool)
     ensures
         result == (voters_distinct(*qc) && all_voters_in_range(*qc, n) && has_quorum(*qc, n)),
 {
-    // Step-2 per design: add invariant (b) in-range prefix and prove the
-    // first early-return (v_id >= n) discharges the postcondition by
-    // witnessing !all_voters_in_range. Other paths still fail; that's the
-    // next steps' job.
+    // Step-3 per design: add invariant (d) bitmap abstraction and
+    // re-establish in the fall-through branch using seen.set frame +
+    // existential reasoning. The duplicate early-return and the final
+    // threshold step still fail; those are steps 5 and 6.
     let mut seen: Vec<bool> = vec![false; n as usize];
+
+    // Initial bitmap state from vec! macro
+    assert(seen@.len() == n as nat);
+    assert(forall|k: int| 0 <= k < n as int ==> seen@[k] == false);
+
     let mut i: usize = 0;
     while i < qc.votes.len()
         invariant
@@ -131,6 +136,10 @@ pub fn verify_qc_structure(qc: &QuorumCert, n: u32) -> (result: bool)
             // (b) in-range prefix
             forall|j: int| 0 <= j < i as int ==>
                 (#[trigger] qc.votes@[j].voter as int) < n as int,
+            // (d) bitmap abstraction: seen[k] iff some prefix voter equals k
+            forall|k: int| 0 <= k < n as int ==>
+                (#[trigger] seen@[k]) == (exists|j: int|
+                    0 <= j < i as int && (#[trigger] qc.votes@[j].voter as int) == k),
         decreases qc.votes@.len() - i,
     {
         let v_id: NodeId = qc.votes[i].voter;
@@ -146,12 +155,47 @@ pub fn verify_qc_structure(qc: &QuorumCert, n: u32) -> (result: bool)
             // witness for !voters_distinct -- next attempt
             return false;
         }
+        // Fall-through path: v_id < n, seen[v] == false.
+        let ghost v_ghost: NodeId = qc.votes@[i as int].voter;
+        let ghost old_i: int = i as int;
+        assert(v_ghost == v_id);
+        assert(v_ghost as int == v as int);
+
         seen.set(v, true);
         i = i + 1;
+
+        // Re-establish (d) at the new i = old_i + 1.
+        assert forall|k: int| 0 <= k < n as int implies
+            (#[trigger] seen@[k]) == (exists|j: int|
+                0 <= j < i as int && (#[trigger] qc.votes@[j].voter as int) == k)
+        by {
+            if k == v_ghost as int {
+                // seen@[k] is now true (we just set it at index v == v_ghost as int).
+                assert(seen@[v_ghost as int] == true);
+                // Existential is witnessed by j == old_i.
+                assert(0 <= old_i < i as int);
+                assert(qc.votes@[old_i].voter as int == k);
+            } else {
+                // seen@[k] unchanged by Vec::set frame (since k != v as int).
+                // The new existential range only differs by j == old_i, whose voter is v_ghost.
+                assert(qc.votes@[old_i].voter as int == v_ghost as int);
+                assert(v_ghost as int != k);
+                // Backward: an exists in the new range yields one in the old range.
+                if exists|j: int| 0 <= j < i as int && qc.votes@[j].voter as int == k {
+                    let j0 = choose|j: int| 0 <= j < i as int && qc.votes@[j].voter as int == k;
+                    if j0 == old_i {
+                        assert(qc.votes@[j0].voter as int == v_ghost as int);
+                        assert(false);
+                    }
+                    assert(0 <= j0 < old_i);
+                }
+                // Forward direction is automatic: any j < old_i is also j < i.
+            }
+        };
     }
     // |voters(qc)| == qc.votes.len() under distinct + in-range (helper lemma in
     // later attempt). For now just emit the comparison — verification will
-    // fail on the postcondition's has_quorum part; that's expected for step 1.
+    // fail on the postcondition's has_quorum part; that's expected for step 3.
     let votes_len: u64 = qc.votes.len() as u64;
     let threshold: u64 = 2u64 * (n as u64) / 3u64 + 1u64;
     votes_len >= threshold
