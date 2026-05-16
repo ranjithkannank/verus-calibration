@@ -1,0 +1,11 @@
+Design note written to `exercises/quorum_count.design.md`. The orchestrator should commit it with `architect: design for quorum_count`.
+
+Key choices made:
+
+- **Bitmap-backed distinct count.** `Vec<bool>` of length `n` plus a `u64` counter. O(1) membership; no nested loops; no ghost state.
+- **Loop invariant pivots on `prefix(i) := voters@.subrange(0, i)`.** Two abstraction conjuncts: `seen[k] <==> prefix(i).contains(k)` and `count as nat == prefix(i).to_set().len()`.
+- **Three small predicted helpers**: `lemma_prefix_extend`, `lemma_push_to_set`, `lemma_set_insert_len`. Explicitly told the implementer not to write them speculatively.
+- **SMT trouble spots flagged**: subrange extensional equality (`=~=`), `Vec::set` frame property, the `u64`/`nat` threshold cast, and the final `prefix(len) =~= voters@` step.
+- **Stretch lemma noted but quarantined** as a separate `proof fn` that must not touch the frozen ensures.
+
+Stopping now.
