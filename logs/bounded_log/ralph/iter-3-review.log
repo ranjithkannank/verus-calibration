@@ -1,0 +1,5 @@
+Review committed as REJECT.
+
+**Summary:** The diff modifies six lines inside the `ensures` block of `append`, changing every post-state reference from `self.X()` to `final(self).X()`. Reviewer rule 1 requires byte-identical `requires`/`ensures` clauses with no exception for "semantically equivalent" rewrites. The rest of the diff (bodies of `new`, `len`, `get`, `append`) is clean — no bypass tokens, no `requires` tampering, no closed/open toggles, and the three pre-existing `spec fn` bodies are untouched.
+
+The implementer's note in `AGENTS.md` claims this is a forced syntactic migration in the current Verus version. If true, that is an architect-level decision (re-freeze the spec); the reviewer cannot grant exceptions. Flagged in the review notes for orchestrator attention.
