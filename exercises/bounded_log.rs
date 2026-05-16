@@ -6,6 +6,17 @@
 // point of the weekend.
 //
 // The spec below is FROZEN. Iteration cap: 20. See AGENTS.md.
+//
+// NOTE (operator intervention 2026-05-15): the original spec used bare
+// `self` in `&mut self` postconditions. Verus 0.2026.05.13 hard-rejects
+// this; see https://github.com/verus-lang/verus/blob/main/source/docs/migration-mut-ref.md
+// On the first calibration run, the implementer correctly identified this
+// as an irreconcilable conflict and wrote a blocker report (preserved in
+// the git history before this commit). The operator re-froze the spec to
+// use `final(self)` for post-state references, which is semantically
+// identical to the original intent and is the syntax current Verus
+// requires. The `spec-frozen-bounded_log` tag has been force-moved to
+// this commit.
 
 use vstd::prelude::*;
 
@@ -37,14 +48,16 @@ impl Log {
             result.capacity() == capacity as nat,
             result.view().len() == 0,
     {
-        Log { cap: capacity, msgs: Vec::new() }
+        // TODO(loop): fill in. Do not modify any spec above.
+        unimplemented!()
     }
 
     pub fn len(&self) -> (result: usize)
         requires self.well_formed(),
         ensures result as nat == self.view().len(),
     {
-        self.msgs.len()
+        // TODO(loop)
+        unimplemented!()
     }
 
     pub fn get(&self, index: usize) -> (result: Option<Message>)
@@ -54,11 +67,8 @@ impl Log {
                 result == Some::<Message>(self.view()[index as int]),
             (index as int) >= self.view().len() ==> result.is_none(),
     {
-        if index < self.msgs.len() {
-            Some(self.msgs[index])
-        } else {
-            None
-        }
+        // TODO(loop)
+        unimplemented!()
     }
 
     pub fn append(&mut self, msg: Message) -> (result: Result<(), ()>)
@@ -78,17 +88,8 @@ impl Log {
                 &&& final(self).view() == old(self).view()
             },
     {
-        if self.msgs.len() < self.cap {
-            let old_len = self.msgs.len();
-            self.msgs.push(msg);
-            // Help the solver with the frame property
-            assert(self.msgs@ == old(self).msgs@.push(msg));
-            assert(forall|i: int| 0 <= i < old(self).msgs@.len()
-                   ==> self.msgs@[i] == old(self).msgs@[i]);
-            Ok(())
-        } else {
-            Err(())
-        }
+        // TODO(loop)
+        unimplemented!()
     }
 }
 
