@@ -1,0 +1,11 @@
+Success. Attempt 6 closed `quorum_cert` with **12 verified, 0 errors**.
+
+Summary:
+- **Sub-task**: Design steps 7–8 — `lemma_qc_has_honest_voter`.
+- **Approach**: Pigeonhole-via-contradiction:
+  1. Built universe `{k : (k as int) < n}` and applied `lemma_range_nodeid_len` + `vstd::set_lib::lemma_len_subset` to lift finiteness to `voters(qc)`.
+  2. Negation branch `if !(exists honest. voters(qc).contains(honest) && !byzantine.contains(honest))` ⇒ `voters(qc).subset_of(byzantine)` ⇒ `|voters(qc)| <= |byzantine|`.
+  3. Arithmetic contradiction: `byzantine.len() >= byzantine_threshold(n)` × 3 vs `byzantine.len() * 3 < n`, closed via `vstd::arithmetic::div_mod::lemma_fundamental_div_mod(twon, 3)` giving `twon == 3*q + r` with `0 <= r < 3`, hence `byzantine_threshold(n) * 3 >= 2n + 1 > n`.
+- **Status**: `verus_passed`. Working tree clean (only the untracked Ralph log remains, which is not part of the implementer's commit scope).
+
+Handing off to reviewer.
