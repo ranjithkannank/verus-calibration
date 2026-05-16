@@ -1,0 +1,9 @@
+Attempt 1 complete. Summary:
+
+- **Sub-task tackled:** Design step 1 — `verify_qc_structure` skeleton (bitmap, early returns, threshold compare) with minimal `decreases` + bound invariants.
+- **Verus result:** Exit 1, 3 expected errors — the early-return witness for `!all_voters_in_range`/`!voters_distinct`, the threshold step, and the empty `lemma_qc_has_honest_voter` body. All anticipated by the design as targets for later attempts.
+- **Logged:** `logs/quorum_cert/attempts.md` (entry with sub-task tag), `logs/quorum_cert/raw/attempt-1.txt`, status file = `verus_failed`.
+- **Committed:** `quorum_cert attempt-1: skeleton with bitmap loop, minimal invariants`.
+- **Tree:** clean, one commit ahead of origin/main.
+
+Stopping per the per-attempt protocol. The outer loop drives iteration to attempt 2, which (per the design step 2/3) should lift `lemma_prefix_extend`/`lemma_push_to_set`/`lemma_range_nodeid_len` etc. from `quorum_count.rs` and start filling the bitmap-vs-prefix invariants.
