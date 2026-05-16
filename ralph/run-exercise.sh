@@ -74,12 +74,11 @@ MODEL_ARCHITECT="claude-opus-4-7"
 MODEL_IMPLEMENTER="claude-sonnet-4-6"
 MODEL_REVIEWER="claude-opus-4-7"
 
-# Per-call dollar safety net. No-op for subscription users; takes effect if
-# the install ever falls back to API metering. Set high enough that complex
-# Verus proofs (quorum_count's distinct-count gymnastics in particular) can
-# complete without being cut off mid-call — the original $2 was too tight
-# and chopped quorum_count attempts at ~328 lines of partially-written proof.
-PER_CALL_BUDGET=20.00
+# No per-call USD budget on the claude invocations: this loop runs against
+# a Claude Code subscription, which halts on its own when quota is hit.
+# An explicit --max-budget-usd is a no-op at best for subscription users
+# and (we saw on quorum_count) can produce confusing partial-output
+# behavior on long calls. Removing it.
 
 # --- preflight ----------------------------------------------------------------
 
@@ -224,7 +223,6 @@ fire_claude() {
     --model "$model" \
     --no-session-persistence \
     --permission-mode acceptEdits \
-    --max-budget-usd "$PER_CALL_BUDGET" \
     --allowedTools "${allowed[@]}" \
     --disallowedTools "${DISALLOWED_TOOLS[@]}" \
     -- "$prompt" > "$iter_log" 2>&1
