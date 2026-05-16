@@ -248,7 +248,7 @@ The intersection (multi-function Verus code, an autonomous loop, a formal verifi
 
 There is also a second contribution worth naming: the operator-intervention case on bounded_log. Most published vericoding results either succeed silently or fail silently. The loop's behavior on the bounded_log conflict, where the agent refused to cheat in either direction, articulated the constraint, named the empowered role, and stopped, is the kind of structured-failure output a trustworthy methodology should produce. A single-shot prompt would either silently apply `final(self)` or silently fail. This run surfaced the conflict, blamed the right party (the operator), and waited.
 
-The next rung is harder: multi-module Verus code with cross-module invariants, run on dissimilar redundant hardware. That is a quarter, not a calibration.
+The next rung is multi-module Verus code with cross-module invariants, run on dissimilar redundant hardware.
 
 ## Reproducing
 
