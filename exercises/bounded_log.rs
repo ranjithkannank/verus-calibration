@@ -37,16 +37,14 @@ impl Log {
             result.capacity() == capacity as nat,
             result.view().len() == 0,
     {
-        // TODO(loop): fill in. Do not modify any spec above.
-        unimplemented!()
+        Log { cap: capacity, msgs: Vec::new() }
     }
 
     pub fn len(&self) -> (result: usize)
         requires self.well_formed(),
         ensures result as nat == self.view().len(),
     {
-        // TODO(loop)
-        unimplemented!()
+        self.msgs.len()
     }
 
     pub fn get(&self, index: usize) -> (result: Option<Message>)
@@ -56,29 +54,41 @@ impl Log {
                 result == Some::<Message>(self.view()[index as int]),
             (index as int) >= self.view().len() ==> result.is_none(),
     {
-        // TODO(loop)
-        unimplemented!()
+        if index < self.msgs.len() {
+            Some(self.msgs[index])
+        } else {
+            None
+        }
     }
 
     pub fn append(&mut self, msg: Message) -> (result: Result<(), ()>)
         requires old(self).well_formed(),
         ensures
-            self.well_formed(),
-            self.capacity() == old(self).capacity(),
+            final(self).well_formed(),
+            final(self).capacity() == old(self).capacity(),
             result.is_ok() ==> {
-                &&& self.view().len() == old(self).view().len() + 1
-                &&& self.view()[old(self).view().len() as int] == msg
+                &&& final(self).view().len() == old(self).view().len() + 1
+                &&& final(self).view()[old(self).view().len() as int] == msg
                 // Frame property: existing entries are unchanged.
                 &&& forall|i: int| 0 <= i < old(self).view().len() ==>
-                        self.view()[i] == old(self).view()[i]
+                        final(self).view()[i] == old(self).view()[i]
             },
             result.is_err() ==> {
                 &&& old(self).view().len() == old(self).capacity()
-                &&& self.view() == old(self).view()
+                &&& final(self).view() == old(self).view()
             },
     {
-        // TODO(loop)
-        unimplemented!()
+        if self.msgs.len() < self.cap {
+            let old_len = self.msgs.len();
+            self.msgs.push(msg);
+            // Help the solver with the frame property
+            assert(self.msgs@ == old(self).msgs@.push(msg));
+            assert(forall|i: int| 0 <= i < old(self).msgs@.len()
+                   ==> self.msgs@[i] == old(self).msgs@[i]);
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 }
 
