@@ -5,3 +5,6 @@ target/
 *.dylib
 .verus-log/
 .DS_Store
+
+# Ralph orchestrator artifacts: kept only on commit rejection for inspection
+*.log.commit

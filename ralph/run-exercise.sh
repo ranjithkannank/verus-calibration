@@ -240,6 +240,7 @@ fire_claude() {
     local commit_msg="${role_lc}: ${EXERCISE} iter-${iteration}"
     if git commit -m "$commit_msg" > "${iter_log}.commit" 2>&1; then
       echo "  > committed: $(git log --oneline -1)"
+      rm -f "${iter_log}.commit"
     else
       echo "  > COMMIT REJECTED by pre-commit hook:"
       sed 's/^/      /' "${iter_log}.commit"
