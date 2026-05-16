@@ -1,9 +1,14 @@
 # Wiring a Formal Verifier into an Autonomous Coding Loop
 
-The previous four posts in this series tightened the feedback signal an
-autonomous coding loop runs against. First plain tests. Then mutation
-testing, to check the tests caught real bugs. Then splitting the
-auditor from the writer, so the loop couldn't grade itself. Then
+An autonomous coding loop that can't satisfy its feedback signal
+except by being correct turns out to be a useful construct. This post
+is what happens when you wire one to a formal verifier and tell it to
+prove three non-trivial things.
+
+The previous four posts in this series tightened the feedback signal
+that an autonomous coding loop runs against. First plain tests. Then
+mutation testing, to check the tests caught real bugs. Then splitting
+the auditor from the writer, so the loop couldn't grade itself. Then
 catching the gap between green tests and integration contracts. Each
 step closed a hole through which a wrong loop could still pass.
 
@@ -23,15 +28,18 @@ mathematical set cardinality but whose implementation has to walk a
 `Vec`. The first two are textbook; the third is where the
 abstraction-to-implementation gap actually shows up.
 
-This post is what came out of it.
+This post is what came out of it. Everything described here lives at
+<https://github.com/ranjithkannank/verus-calibration> and is licensed
+permissively; the per-section deep-links below point at the exact
+files.
 
 ## The setup
 
-Three roles, three Claude Code subagents, three (mostly two) models:
+Three roles, three [Claude Code subagents](https://github.com/ranjithkannank/verus-calibration/tree/main/.claude/agents), three (mostly two) models:
 
-- **Architect** (Opus 4.7) — reads the frozen spec, writes a design note. Does not see verifier output on the first pass.
-- **Implementer** (Sonnet 4.6) — one attempt per call: edit the file, run verus, log the result.
-- **Reviewer** (Opus 4.7) — after verus passes, audits the diff against the frozen baseline. Returns `APPROVE` or `REJECT`.
+- **[Architect](https://github.com/ranjithkannank/verus-calibration/blob/main/.claude/agents/architect.md)** (Opus 4.7) — reads the frozen spec, writes a design note. Does not see verifier output on the first pass.
+- **[Implementer](https://github.com/ranjithkannank/verus-calibration/blob/main/.claude/agents/implementer.md)** (Sonnet 4.6) — one attempt per call: edit the file, run verus, log the result.
+- **[Reviewer](https://github.com/ranjithkannank/verus-calibration/blob/main/.claude/agents/reviewer.md)** (Opus 4.7) — after verus passes, audits the diff against the frozen baseline. Returns `APPROVE` or `REJECT`.
 
 The reviewer is a separate role for the same reason the previous post
 argued for splitting audit from decision. The architect committed to a
@@ -39,11 +47,14 @@ design that produced the implementation; asking it to audit that same
 implementation for spec drift bakes in confirmation bias. A separate
 audit on a fresh context is a cheap structural safeguard.
 
-The three roles are wired together by a Ralph-style outer loop — bash
-— that reads state from filesystem artifacts and fires one `claude
--p` call per iteration with fresh context every time. Memory lives in
-`AGENTS.md`, the design note, `attempts.md`, and git history. The
-state machine:
+The three roles are wired together by a [Ralph-style outer loop][ralph]
+— bash — that reads state from filesystem artifacts and fires one
+`claude -p` call per iteration with fresh context every time. Memory
+lives in [`AGENTS.md`][agentsmd], the design note, `attempts.md`, and
+git history. The state machine:
+
+[ralph]: https://github.com/ranjithkannank/verus-calibration/blob/main/ralph/run-exercise.sh
+[agentsmd]: https://github.com/ranjithkannank/verus-calibration/blob/main/AGENTS.md
 
 ```
                   ┌─────────────────────────────────┐
@@ -64,6 +75,26 @@ drives APPROVE vs REJECT. There's no explicit state file. That means
 the loop is fully resumable: kill it, re-run, it picks up where it
 left off.
 
+A single per-iteration claude invocation looks like this — boring on
+purpose:
+
+```bash
+claude -p \
+  --agent "$agent" \
+  --model "$model" \
+  --no-session-persistence \
+  --permission-mode acceptEdits \
+  --allowedTools "${allowed[@]}" \
+  --disallowedTools "${DISALLOWED_TOOLS[@]}" \
+  -- "$prompt" > "$iter_log" 2>&1
+```
+
+The `--` is load-bearing — without it, the variadic `--allowedTools`
+list eats the prompt argument. The `--no-session-persistence` flag is
+what makes this a Ralph loop rather than a long-lived agent: each
+iteration starts from a clean conversational slate, with only what's
+on disk to ground it.
+
 Each implementer attempt is its own git commit. That's load-bearing
 for two reasons: the reviewer's diff target is a stable snapshot, and
 when something goes wrong later you can quote the actual code.
@@ -73,7 +104,7 @@ when something goes wrong later you can quote the actual code.
 A loop that runs unattended needs boundaries. There are two.
 
 **Content boundary — a pre-commit hook.** Every commit goes through
-`scripts/git-hooks/pre-commit`. It rejects three things:
+[`scripts/git-hooks/pre-commit`][hook]. It rejects three things:
 
 1. Any staged file outside a path whitelist (`exercises/`, `logs/`,
    `writeup/`, `ralph/`, `scripts/`, `.claude/`, the named top-level
@@ -85,6 +116,26 @@ A loop that runs unattended needs boundaries. There are two.
    is `requires` or `ensures` must appear *verbatim* in the staged
    file. New helper `spec fn`s are allowed; modifying frozen ones is
    not.
+
+The third check is the load-bearing one. For each staged exercise
+file, the hook diffs against the `spec-frozen-<exercise>` git tag and
+runs the equivalent of:
+
+```bash
+frozen=$(git show "$tag:$f" | grep -E '^[[:space:]]*(requires|ensures)([^a-zA-Z0-9_]|$)')
+staged_content=$(git show ":$f")
+while IFS= read -r line; do
+  if ! echo "$staged_content" | grep -qFx "$line"; then
+    errors+=("[spec]  $f: frozen line missing verbatim: '$line'")
+  fi
+done <<< "$frozen"
+```
+
+`-Fx` is exact-line match. Cosmetic reformatting that touches a
+frozen `requires` or `ensures` line is rejected just as firmly as a
+semantic weakening. Intentionally strict.
+
+[hook]: https://github.com/ranjithkannank/verus-calibration/blob/main/scripts/git-hooks/pre-commit
 
 **Capability boundary — a Claude Code tool whitelist.** Each `claude
 -p` call passes a role-scoped `--allowedTools` list and a universal
@@ -140,24 +191,49 @@ could read.
 This is the exercise where the methodology earned its keep.
 
 The spec is a fixed-capacity append-only log with `new`, `len`, `get`,
-and an `append` whose postcondition includes a frame property — *the
-existing entries don't change* — which is the kind of obligation SMT
-solvers handle unevenly.
+and an `append` whose postcondition includes a frame property. In
+plain English, the frame property says: after a successful append,
+every existing entry at index `i < old_len` still equals what it was
+before. SMT solvers need that stated explicitly, usually with a
+defensive `assert` after the mutation, because the underlying axioms
+about `Vec::push` don't always fire eagerly when the goal is a
+quantified statement about the older indices. The architect knew this
+and predicted the assert chain; the implementer wrote it.
 
 On the first attempt, the implementer wrote `final(self)` everywhere
-in the `ensures` clause of `append`. Verus accepted: `4 verified, 0
-errors`. The reviewer then ran the audit against the frozen tag and
-rejected:
+in the `ensures` clause of `append` instead of bare `self`. Verus
+accepted: `4 verified, 0 errors`. The reviewer then ran the audit
+against the frozen tag and rejected. The diff hunk that triggered the
+rejection looked like this:
 
-> The implementer rewrote six lines inside the `ensures` block of
-> `append`, changing every post-state reference to `self` into
-> `final(self)`. ... Even granting the implementer's claim ... that
-> `final(self)` is semantically equivalent to the post-state `self` ...
-> this is not byte-identical and therefore falls under rule 1.
+```diff
+- self.well_formed(),
+- self.capacity() == old(self).capacity(),
++ final(self).well_formed(),
++ final(self).capacity() == old(self).capacity(),
+  result.is_ok() ==> {
+-     &&& self.view().len() == old(self).view().len() + 1
+-     &&& self.view()[old(self).view().len() as int] == msg
++     &&& final(self).view().len() == old(self).view().len() + 1
++     &&& final(self).view()[old(self).view().len() as int] == msg
+      // Frame property: existing entries are unchanged.
+-                       self.view()[i] == old(self).view()[i]
++                       final(self).view()[i] == old(self).view()[i]
+```
+
+Six lines inside the `ensures` block, all rewritten. The reviewer's
+[full audit][bounded-log-reject] cited the line numbers, then
+explained:
+
+> Even granting the implementer's claim ... that `final(self)` is
+> semantically equivalent to the post-state `self` ... this is not
+> byte-identical and therefore falls under rule 1.
 
 Reviewer rule firing exactly as designed. The implementer had even
 added a discovered-pattern note claiming `final(self)` was required by
 the current Verus version — and it turned out to be right.
+
+[bounded-log-reject]: https://github.com/ranjithkannank/verus-calibration/commit/2f61144
 
 On the second attempt, the implementer dutifully restored bare `self`
 to match the frozen spec, and Verus rejected it with a clear migration
@@ -237,8 +313,39 @@ predicted. Rather than guessing at lemma names, it grepped the local
 `lemma_int_range(lo, hi)` which proves a range set is finite with
 cardinality `hi - lo`. It noticed the type mismatch — `voters.to_set()`
 is `Set<NodeId>` but `lemma_int_range` is on `Set<int>` — and wrote
-a new helper `lemma_range_nodeid_len(n: u32)` as the NodeId analogue
-by structural recursion on `u32`.
+a new helper [`lemma_range_nodeid_len(n: u32)`][quorum-rs] as the
+NodeId analogue, by structural recursion on `u32`:
+
+```rust
+proof fn lemma_range_nodeid_len(n: u32)
+    ensures
+        Set::<NodeId>::new(|k: NodeId| (k as int) < n as int).finite(),
+        Set::<NodeId>::new(|k: NodeId| (k as int) < n as int).len() == n as nat,
+    decreases n,
+{
+    let s = Set::<NodeId>::new(|k: NodeId| (k as int) < n as int);
+    if n == 0 {
+        assert(s =~= Set::<NodeId>::empty());
+    } else {
+        let n1: u32 = (n - 1) as u32;
+        let m: NodeId = n1;
+        let s1 = Set::<NodeId>::new(|k: NodeId| (k as int) < n1 as int);
+        lemma_range_nodeid_len(n1);                          // recurse
+        assert(s1.insert(m) =~= s) by { /* element-wise */ };
+        assert(!s1.contains(m));
+        vstd::set::axiom_set_insert_len(s1, m);              // bridge
+    }
+}
+```
+
+The agent didn't have to write this. It could have left
+`assert(count <= n)` in place and let verus keep complaining; it could
+have weakened the invariant; it could have added an `assume` (and been
+caught by the hook). Instead it wrote a recursive cardinality lemma
+mirroring the shape of vstd's own range lemma. That's the
+implementer's role doing what the architecture asked of it.
+
+[quorum-rs]: https://github.com/ranjithkannank/verus-calibration/blob/main/exercises/quorum_count.rs
 
 It also caught its own regression. After making the surgical proof
 additions, it ran verus and got a Rust-level type error in its own
@@ -321,27 +428,54 @@ X percent*. Sample size three is sample size three.
 
 ## Where this fits
 
-The vericoding benchmark paper measures success rates on isolated
-single-function tasks. Huntley's Ralph posts describe the outer-loop
-pattern in domains where the feedback signal is tests. Karpathy's
-autoresearch demos use a scalar metric and a single agent. The
-intersection — multi-function Verus code, an autonomous loop, a
+Three existing bodies of work touch pieces of this, but not the whole
+intersection.
+
+The **Verus vericoding benchmark** (Schubert et al., 2025) measures
+LLM success rates on isolated single-function Verus tasks. One model,
+one shot, one function, no role split, no autonomous outer loop, no
+treatment of cheating. The benchmark is what tells me 44% first-try
+is the current floor for raw single-shot Verus; this experiment is
+about what surrounding scaffolding gets a real codebase past it.
+
+**Huntley's Ralph pattern** describes the outer-loop shape — fresh
+context per iteration, file-based memory, agent commits per attempt —
+but applies it to unsafe-code domains (internal tools, CRUD apps)
+where the feedback signal is the test suite. Tests pass or fail; no
+verifier, no no-cheating rule, no separate audit role. The
+contribution here is keeping the loop shape and changing the
+feedback signal to a verifier, plus adding the structural pieces (the
+sandbox, the audit role) that the harder signal requires.
+
+**Karpathy's autoresearch demos** popularized the
+"agent-runs-an-experiment-overnight" framing with a scalar metric (a
+loss, a benchmark score) and a single agent that proposes,
+implements, and evaluates in the same context. The metric here is
+binary (verus exits 0), the agent doing the work is not the agent
+doing the evaluation, and the rules forbidding spec drift live
+outside the agent's reach. Same overnight-experiment energy, but the
+proposer / implementer / auditor are three separate roles by
+construction.
+
+The intersection — multi-function Verus code, an autonomous loop, a
 formal verifier as the feedback signal, an explicit no-cheating
 sandbox, multi-model role splitting — is where this experiment sat,
-and there isn't much public work in that intersection yet.
+and I haven't found prior public work in exactly that intersection.
 
-What's also new here, more from accident than design: the
-operator-intervention case on bounded_log. Most published
-vericoding results either succeed silently or fail silently. The
-loop's behavior on the bounded_log conflict — agent refused to cheat
-in either direction, articulated the constraint, named the empowered
+What's also new, more from accident than design: the
+operator-intervention case on bounded_log. Most published vericoding
+results either succeed silently or fail silently. The loop's
+behavior on the bounded_log conflict — agent refused to cheat in
+either direction, articulated the constraint, named the empowered
 role, stopped — is the kind of structured-failure output you want
-from a methodology that's intended to be trustworthy. A single-shot
-prompt would either silently apply `final(self)` or silently fail.
-This calibration surfaced the conflict, blamed the right party (the
-operator, not the agent), and waited for an operator decision.
+from a methodology intended to be trustworthy. A single-shot prompt
+would either silently apply `final(self)` or silently fail. This
+calibration surfaced the conflict, blamed the right party (the
+operator, not the agent), and waited.
 
-The trust ladder has another rung now. The next rung is harder.
+The trust ladder has another rung now. The next rung is harder:
+multi-module Verus code with cross-module invariants, run on
+dissimilar redundant hardware. That's a quarter, not a calibration.
 
 ## Reproducing
 
