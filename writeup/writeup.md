@@ -1,10 +1,7 @@
 # Vericoding in the Loop: A Calibration Against Three Verus Exercises
 
 <!--
-Status: draft in progress.
-- Sections 1-7 are complete and reflect the actual run on 2026-05-15.
-- Section 4.3 (quorum_count results) has a placeholder while the run completes.
-- Section 6 will get its final failure taxonomy row once quorum_count lands.
+Status: complete draft of the 2026-05-15 run.
 This document is the source for a two-post split on the blog: methodology
 post (sections 1-3, 5, 8) and results post (sections 4, 6, 7, 9, 10).
 -->
@@ -25,7 +22,10 @@ the loop can still produce real verified code under that constraint.
 I ran the calibration on a Saturday's worth of work compressed into one
 afternoon. Three Verus exercises of increasing difficulty, three roles
 on different Claude models, two sandbox layers, one autonomous outer
-loop. This post is what came out of it.
+loop. All three exercises ended in `verus: 0 errors` and `reviewer:
+APPROVE`. Getting there surfaced more orchestrator failure modes than
+verifier failures — the bottleneck on the hardest exercise was the
+*wrapper*, not the proof. This post is what came out of it.
 
 ## 1. The problem
 
@@ -179,6 +179,16 @@ to,* and that's the boundary I wanted to make load-bearing in writing.
 
 ## 4. What happened, exercise by exercise
 
+Results at a glance:
+
+| Exercise         | Status | Attempts | Implementer wall time | Notable                                          |
+|------------------|--------|----------|-----------------------|--------------------------------------------------|
+| binary_search    | DONE   | 1        | ~2 min                | Clean. Architect's design predicted every invariant. |
+| bounded_log      | DONE   | 1 (post re-freeze) | ~2 min      | Surfaced a Verus version mismatch the operator (me) had introduced; the implementer's blocker report was the cleanest evidence of methodology working. |
+| quorum_count     | DONE   | 2 (attempt 2 via direct streaming, not the wrapper) | ~30 min for attempt 2 | Genuine concrete-to-abstract proof work. The orchestrator wrapper, not the proof itself, was the bottleneck. |
+
+The next three subsections tell each story.
+
 ### 4.1 binary_search — clean first-try
 
 The easiest of the three. Spec: a verified binary search on a sorted
@@ -301,8 +311,6 @@ The methodology survived its own author's mistake. That's not nothing.
 
 ### 4.3 quorum_count — concrete-to-abstract
 
-<!-- TODO: results section to be filled in once the current run completes. -->
-
 The hardest of the three on paper. Spec: given a `Vec<NodeId>` of
 voters (with possible duplicates) and a total node count `n`, return
 `true` iff the *distinct* voters meet the standard Byzantine threshold
@@ -347,10 +355,109 @@ The fix was small (`PER_CALL_BUDGET=20.00`), the lesson was not. A
 "safety net" is only a safety net if it doesn't fire on the work you
 want to do.
 
-<!-- TODO: actual results from quorum_count run with raised budget. -->
-<!-- - first-try success? attempts to convergence? -->
-<!-- - what failure modes from the implementer this time, if any? -->
-<!-- - did the reviewer approve cleanly given the bitmap-bridge proof? -->
+**Attempt 1 — real proof work, 5/7 obligations verified.** 14 minutes
+of Sonnet wall time. The implementer wrote 333 lines of code and proof
+including the three helper lemmas the architect predicted plus two
+extras (`lemma_to_set_finite`, `lemma_set_insert_existing`). It also
+discovered the correct vstd API name (`axiom_set_insert_len`, not
+`lemma_set_insert_len`) on its own. Verus output:
+
+```
+error: invariant not satisfied before loop
+   --> exercises/quorum_count.rs:153:13
+    |
+153 |             count as nat == voters@.subrange(0, i as int).to_set().len(),
+
+error: assertion failed
+   --> exercises/quorum_count.rs:254:20
+    |
+254 |             assert(count as nat <= n as nat);
+
+verification results:: 5 verified, 2 errors
+```
+
+The implementer's `attempts.md` entry diagnosed both failures
+precisely (empty-subrange `to_set().len()` not seen as 0 at loop entry;
+the `count <= n` bound after increment needs a pigeonhole argument)
+and proposed specific fixes (`lemma_range_set_finite_len(n)` plus
+subset monotonicity). That's the autoresearch loop working — each
+attempt produces a measurable, named outcome that feeds the next one.
+
+**Attempt 2 — the wrapper hung. Twice.** Two consecutive Ralph
+iterations exhibited the same pathology: 24+ minutes of claude-call
+wall time, *zero bytes* of streaming output, exercise file untouched
+since attempt 1's commit, claude process consuming CPU (sometimes 80%,
+sometimes 5%) but producing nothing. No error message, no commit, no
+log entry. The `--no-session-persistence` + `--agent implementer`
+flag combination plus this specific file state seemed to deadlock
+inside Claude Code's response handling, but I couldn't reproduce it
+under simpler conditions. It is the single most operationally annoying
+failure mode of the run, because it doesn't surface as an error — it
+surfaces as silence.
+
+The diagnosis came by deletion. Removing `--max-budget-usd` (which I'd
+suspected first) didn't fix it. Removing `--agent implementer` and
+`--no-session-persistence`, switching to direct streaming via
+`--output-format stream-json --include-partial-messages`, and
+re-invoking the same model with the same tool whitelist and a
+hand-written prompt made the call work immediately and stream
+hundreds of events as it went. Same model, same files, same task,
+same restrictions on tools — what changed was the framing flags and
+the output mode.
+
+That counts as a failure of the methodology's autonomy claim. The
+wrapper's promise is "you set up the experiment and walk away." On the
+hardest exercise, the wrapper hung opaquely and recovery required
+operator-driven streaming-mode introspection. See §7 for what I'd
+fix.
+
+**Attempt 2 — actual results, via direct streaming call.**
+Single Sonnet call. $1.32. ~30 minutes wall time. Internally
+multi-iteration: read all context files, grep across four vstd
+modules for the right lemma names, find `lemma_len_subset` and
+`lemma_int_range` in `set_lib.rs`, recognize the type mismatch
+(`voters.to_set()` is `Set<NodeId>` but `set_int_range` is `Set<int>`),
+write a new helper `lemma_range_nodeid_len(n: u32)` as the NodeId
+analogue of `lemma_int_range`, edit the file three times in surgical
+passes (one for the loop-entry hints, one for the Case A bound, one
+for the new lemma), run verus, hit a Rust-level type error in its own
+just-added code (`u32 - 1` evaluates to `int` inside a `proof fn`),
+catch the exit code, fix the cast, re-run verus:
+
+```
+verification results:: 8 verified, 0 errors
+```
+
+The agent's self-correction on the type error matters. It would have
+been easy to silently introduce a regression after fixing the two
+named obligations and not notice the new failure. Instead it read its
+own verus output, recognized the new error pattern, and patched it in
+the same call.
+
+**Reviewer — APPROVE, 78 seconds.** Five-point checklist passed with
+specific line citations:
+
+> The diff hunk at `exercises/quorum_count.rs` lines 149-154 shows
+> `is_byzantine_quorum`'s `requires` and `ensures` appear only as
+> unchanged context lines. ... The three frozen `pub open spec fn`
+> declarations and `is_byzantine_quorum`'s `requires`/`ensures` appear
+> only as unchanged context. The new helpers (`lemma_prefix_extend`,
+> `lemma_push_to_set`, `lemma_to_set_finite`, `lemma_set_insert_new_len`,
+> `lemma_set_insert_existing`, `lemma_range_nodeid_len`) have reasonable
+> preconditions and ensure-clauses that look like genuine library-level
+> facts, not trivializations.
+
+The reviewer also flagged a cross-exercise pattern worth canonizing:
+
+> The implementer leans heavily on `=~=` extensional equality and
+> `choose` witnesses to push set/seq reasoning through the SMT solver;
+> this pattern recurred in `bounded_log` too and is worth canonizing
+> in the architect's playbook.
+
+That's the audit role doing more than gatekeeping — it's accumulating
+institutional knowledge across exercises and proposing it be promoted
+to architect-level guidance for the next exercise. The methodology
+working as designed.
 
 ## 5. Methodology contributions
 
@@ -386,9 +493,13 @@ a calibration without rewriting subagents.
 |----------------------------------------|----------------------------------------------------|-----------------------------------------------|
 | Spec drift (bare `self` → `final(self)`) | Reviewer (hook missed it: not on its line whitelist) | Yes — required operator re-freeze of the tag  |
 | Implementer hallucination               | Implementer self-caught (wrote escalation, not pretended success) | Yes — operator intervention                    |
+| Implementer regression (Rust type error mid-proof) | Implementer self-caught via verus exit code      | Yes — agent self-corrected in same call        |
 | Pro plan rate limit                     | Operator (script kept retrying)                    | Required plan upgrade                          |
 | Loop churning on rate-limit `exit:1`    | Operator only (loop has no signal-aware behavior)  | Code change to ralph script                    |
 | Per-call budget cap too tight           | Operator (saw partial file, traced to log)         | Configuration change                           |
+| Wrapper hang with `--no-session-persistence` + `--agent` | **Operator only — silently**, via OS process inspection | Bypass the wrapper for that exercise; direct streaming call |
+| Bash permission filter trips on space-in-path | Implementer (verus invocation got rejected as "multiple operations") | Agent retried with relative path; fix is to not have spaces in cwd |
+| Output redirection outside cwd blocked  | Implementer (write to `/tmp/` rejected by Claude Code session boundary) | Agent retried with cwd-relative path           |
 | Pre-commit hook spec-line gap           | Reviewer caught what hook missed                   | Hook strengthen-to-multi-line is straightforward |
 
 The interesting row is the first. The hook's frozen-line check looks
@@ -445,7 +556,40 @@ do it before any longer-running version of this experiment.
 that worked fine for binary_search and bounded_log chopped quorum_count
 mid-proof. A static cap isn't the right shape; either it should scale
 with prior context size or it should be paired with retry-with-bigger
-behavior.
+behavior. Removing the flag entirely was the eventual fix on a
+subscription plan; on metered API it would need to come back in a
+smarter form.
+
+**The wrapper hangs silently on the hardest exercise.** The single
+worst experience of the run. With `--no-session-persistence` and
+`--agent implementer` set, two consecutive Sonnet calls on
+quorum_count's attempt 2 produced zero bytes for 24+ minutes each. No
+error, no timeout, no diagnostic — the bash script just sat waiting for
+a `claude -p` invocation that never exited. The only way to make
+progress was to bypass the wrapper, run `claude -p` directly with
+`--output-format stream-json --include-partial-messages` (and without
+those two flags), and watch events stream in real time. That worked
+immediately. I don't have a confirmed root cause. The plausible
+hypotheses are (a) some buffering interaction between
+`--no-session-persistence` and long extended-thinking blocks, (b) a
+subagent-prompt loading issue that the trivial successful runs (which
+were on smaller exercises) didn't surface, or (c) something specific
+about this exercise's file state. Any of those is fixable, but I'd
+want a reproducer before claiming I'd fixed it.
+
+**Spaces in the working-directory path break Bash permission
+filtering.** Claude Code's filter treats `verus "/path with space/file"`
+as multiple operations and partially denies it. Sonnet adapted by
+retrying with a relative path. Not a hard blocker but worth knowing
+before naming a project directory.
+
+**Output redirection outside the working directory is silently
+restricted.** My implementer prompt told the agent to redirect verus
+output to `/tmp/quorum_attempt2.txt`. Claude Code's session-boundary
+check rejected the write. The error was clear enough for the agent to
+adapt, but I shouldn't have written the prompt that way in the first
+place — and the Ralph script's own prompts have the same shape, so
+they'd hit the same wall on a different exercise.
 
 ## 8. What's different from existing work
 
@@ -459,32 +603,67 @@ feedback signal, an explicit no-cheating sandbox, multi-model role
 splitting* — is where this experiment sits, and there's not a lot of
 public work in that intersection.
 
-What's also genuinely new here, more from accident than design: the
-*operator-intervention case* on bounded_log. Most published vericoding
-results either succeed silently or fail silently. The loop's behavior
-on the bounded_log conflict — agent refused to cheat in either
-direction, articulated the constraint, named the empowered role,
-stopped — is the kind of structured-failure-mode output you'd want
-from a methodology that's intended to be trustworthy. That outcome is
-not something a single-shot prompt or a benchmark would surface.
+What's also genuinely new here, more from accident than design: two
+structured-failure-mode outputs that most published vericoding work
+doesn't surface.
+
+First, the *operator-intervention case* on bounded_log. The loop's
+behavior on the bounded_log conflict — agent refused to cheat in
+either direction, articulated the constraint, named the empowered
+role, stopped — is the kind of output you'd want from a methodology
+that's intended to be trustworthy. A single-shot prompt would either
+silently apply `final(self)` or silently fail; the calibration
+surfaced the conflict, blamed the right party (the operator, not the
+agent), and waited.
+
+Second, the *visible wrapper hang* on quorum_count. Most published
+agent-loop results report success rates, not failure shapes. The
+specific shape here — claude process running at low CPU, zero bytes
+streamed, no error, recoverable only by bypassing the wrapper —
+isn't in the literature I've read. If anyone else is building an
+autonomous Verus loop on Claude Code, this is the rake they will
+step on. Writing the rake down is worth more than another 1% on a
+benchmark.
 
 ## 9. What I'd do next
 
 In order of how much they'd improve the next run of this experiment:
 
-1. **Fix the hook's spec-preservation gap.** Multi-line clause
-   tracking instead of line-prefix matching. Two evenings of work.
+1. **Reproduce and fix the silent wrapper hang.** The single worst
+   experience of this run. Build a smallest-failing example: which of
+   `--no-session-persistence`, `--agent`, the long prompt context, or
+   the specific file state triggers the deadlock? Once reproducible,
+   the fix is either a watchdog (kill after N seconds of zero stream
+   output) or a different invocation shape. Either is small; the
+   diagnosis is the hard part.
 2. **Signal-aware orchestrator.** Distinguish rate-limit, budget,
-   verus-fail, network-fail in the iteration loop. Each gets its own
-   recovery behavior.
-3. **Per-attempt time and token measurement landed in `attempts.md`.**
+   verus-fail, network-fail, *silent-hang* in the iteration loop. Each
+   gets its own recovery behavior. Specifically: detect Pro-plan
+   rate-limit signatures in `iter_log` and exit with a sentinel, not
+   another iteration. Add a per-iteration wall-clock budget; if it
+   elapses with zero bytes streamed, kill the claude call and treat as
+   the silent-hang failure.
+3. **Fix the hook's spec-preservation gap.** Multi-line clause
+   tracking instead of line-prefix matching. Two evenings of work.
+4. **Stream-mode logging by default.** This run started in
+   `--output-format text` mode (the wrapper default), so the per-call
+   logs were 0 bytes during a 24-minute hang. Switching to
+   `--output-format stream-json --include-partial-messages` would have
+   given me the in-flight diagnostic I had to bolt on later. Cost: more
+   bytes per log file, slightly heavier parsing in the monitor. Worth
+   it.
+5. **Per-attempt time and token measurement landed in `attempts.md`.**
    Currently we have to infer from wall-clock + ralph logs. A small
    addition to the implementer prompt + a one-line bash addition would
    give us per-attempt cost data without a separate logging story.
-4. **A fourth exercise that genuinely needs escalation.** Something
+   Quorum_count's $1.32 single-call cost is a useful data point; I
+   want that for every attempt.
+6. **A fourth exercise that genuinely needs escalation.** Something
    where the architect's first design plausibly *wouldn't* work and a
    THINK_REVISE path would fire. None of the three I picked hit that
    path in this run.
+7. **No spaces in the project working directory.** Trivial config fix;
+   the bash permission filter doesn't handle them cleanly.
 
 Beyond the methodology fixes, the actual aerospace-software direction:
 this calibration was the lowest-cost test of whether *vericoding under
