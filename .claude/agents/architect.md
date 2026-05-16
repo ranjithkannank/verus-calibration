@@ -25,6 +25,23 @@ Aim for 100-250 lines. Longer is not better; the implementer reads this fast and
 6. **SMT trouble spots.** Where do you expect the solver to need explicit asserts? Frame properties on mutation are the canonical case; flag any others.
 7. **Suggested order of operations.** What should the implementer write first, second, third? Usually: easiest postcondition first, hardest last.
 
+8. **`## Sub-tasks` section (required).** End the design note with an explicit numbered list of sub-tasks, ordered easiest to hardest. The implementer is instructed to scope each iteration to the smallest unfinished sub-task on this list, so the list is what drives per-iteration focus. Each sub-task should be small enough to land in a single edit-verus-iterate cycle. Example shape:
+
+   ```
+   ## Sub-tasks
+   1. Stub `verify_qc_structure` returning `false` with placeholder
+      invariants; confirm the file parses.
+   2. Add the bitmap allocation + initial-state assertion at loop entry.
+   3. Add the loop body for the in-range check (early-return false).
+   4. Add the distinctness check via the bitmap.
+   5. Add the threshold check after the loop.
+   6. Prove the body satisfies the postcondition.
+   7. Stub `lemma_qc_has_honest_voter` with the universe-size helper.
+   8. Complete the pigeonhole proof body.
+   ```
+
+   A sub-task that requires "land helper lemma X and use it in proof Y" is too big — split it into "write X" and then "apply X in Y."
+
 ## What you must not do
 
 - Do not edit any file under `exercises/` except creating `<exercise>.design.md`.

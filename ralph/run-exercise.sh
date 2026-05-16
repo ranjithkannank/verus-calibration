@@ -72,8 +72,18 @@ fi
 mkdir -p "logs/${EXERCISE}/ralph"
 
 # Models — keep in sync with .claude/agents/*.md frontmatter.
+#
+# The implementer was originally Sonnet 4.6 — it handled the three
+# calibration exercises (binary_search, bounded_log, quorum_count)
+# competently. Quorum_cert and subsequent BFT-path exercises require
+# genuine proof reasoning (cardinality bounds, pigeonhole arguments,
+# composing helper lemmas) where the model needs to plan over many
+# tokens of internal thinking. Switching to Opus 4.7 for the
+# implementer role aligns with the principle that the calls doing the
+# hardest reasoning should run on the strongest model — even if it
+# makes the implementer the most expensive role.
 MODEL_ARCHITECT="claude-opus-4-7"
-MODEL_IMPLEMENTER="claude-sonnet-4-6"
+MODEL_IMPLEMENTER="claude-opus-4-7"
 MODEL_REVIEWER="claude-opus-4-7"
 
 # No per-call USD budget on the claude invocations: this loop runs against
@@ -377,12 +387,25 @@ Read in this order:
   5. $ATTEMPTS if it exists (your prior attempts — do not repeat them)
   6. The most recent file in $RAWDIR/ if any (last verifier output)
 
-Make EXACTLY ONE new attempt:
+Make EXACTLY ONE new attempt. Scope it narrowly:
 
-  a. Edit $EXFILE — implement or refine.
+  - If $DESIGN contains a `## Sub-tasks` section (or equivalent,
+    such as "Suggested order of operations"), work on the smallest
+    unfinished sub-task. Pick the next one in order. The list is
+    ordered easiest to hardest; do not skip ahead.
+  - If the most recent raw verifier output names a specific failing
+    function or assertion, scope your edits to that failure. Do
+    NOT rewrite unrelated parts of the file in the same attempt.
+  - The orchestrator will iterate. You do not need to fix
+    everything in one call. Small, surgical, focused edits.
+
+Then perform the per-attempt protocol:
+
+  a. Edit $EXFILE — implement or refine the chosen sub-task only.
   b. Run: verus $EXFILE --crate-type=lib > $RAWDIR/attempt-${attempt_num}.txt 2>&1
      (You can `cat` the file afterwards to inspect the output.)
   c. Append an entry to $ATTEMPTS using the format in AGENTS.md.
+     Include WHICH sub-task you worked on this iteration.
   d. Write $STATUS with exactly one of these tokens:
        - verus_passed     (verus exited 0)
        - verus_failed     (verus exited non-zero; you will iterate)
