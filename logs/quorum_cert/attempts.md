@@ -34,3 +34,15 @@ verification results:: 1 verified, 2 errors
 ```
 The duplicate-voter early return (was line 147 in attempt 2) is no longer in the error list: (d) instantiated at `m = v_id as int` provides the existential witness for `!voters_distinct`, so Verus discharges that path automatically.
 **Next idea:** Design step 4 — add invariant `(c)` pairwise distinctness, re-established in the fall-through using (d) at `m = v_ghost as int` (which read backwards says `v_ghost` is not yet in the prefix). This gives `voters_distinct(*qc)` at loop exit, which is the missing conjunct in the final-return postcondition path.
+
+## Attempt 4 — 2026-05-16
+**Sub-task:** Design step 4 — invariant `(c)` pairwise distinct voters in prefix, re-established in the fall-through branch using (d) at `k = v_ghost as int` (which, since `seen[v] == false`, reads as: no prior index has voter == v_ghost).
+**Approach:** Added invariant `(c) forall|j,k| 0 <= j < k < i ==> qc.votes@[j].voter != qc.votes@[k].voter`. Before `seen.set(v, true)` in the fall-through branch, captured the helper fact `forall|j: int| 0 <= j < old_i ==> qc.votes@[j].voter as int != v_ghost as int` by reading invariant (d) at `k = v_ghost as int` as a contrapositive on the inner exists. After `seen.set + i += 1`, an `assert forall|j: int, k: int| 0 <= j < k < i implies ...` block case-splits on `k < old_i` (covered by old (c)) vs `k == old_i` (new index has voter == v_ghost, and the captured fact rules out any earlier `j` matching v_ghost).
+**Verifier output:** 2 errors, same as attempt 3 (no regression, and (c) re-establishment was accepted with no new errors):
+- line 118 / line 229: final `votes_len >= threshold` postcondition — needs bridging lemma `voters(qc).len() == qc.votes.len()` (under distinct) + threshold arithmetic. This is step 6.
+- line 252: `lemma_qc_has_honest_voter` postcondition — body still empty. This is steps 7–8.
+```
+verification results:: 1 verified, 2 errors
+```
+Notably the new asserts/invariants at lines 140, 171, 183 (the (c) invariant, the captured helper, and the re-establishment) all verified — no errors fired at any of those locations. Invariant (c) holds at loop exit ⇒ `voters_distinct(*qc)` is now part of the loop-exit context for the final return.
+**Next idea:** Design step 6 — lift `lemma_prefix_extend`, `lemma_push_to_set`, `lemma_to_set_finite`, `lemma_set_insert_new_len`, `lemma_range_nodeid_len` verbatim from `quorum_count.rs`. Write `lemma_distinct_seq_to_set_len`, the internal `voter_seq` spec fn, `lemma_voters_as_to_set`, and the bridging `lemma_distinct_voters_len(*qc)`. Call it after the loop, assert `threshold as nat == byzantine_threshold(n)`, return `votes_len >= threshold`.

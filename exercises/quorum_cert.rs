@@ -136,6 +136,9 @@ pub fn verify_qc_structure(qc: &QuorumCert, n: u32) -> (result: bool)
             // (b) in-range prefix
             forall|j: int| 0 <= j < i as int ==>
                 (#[trigger] qc.votes@[j].voter as int) < n as int,
+            // (c) pairwise distinct voters in the prefix
+            forall|j: int, k: int| 0 <= j < k < i as int ==>
+                qc.votes@[j].voter != qc.votes@[k].voter,
             // (d) bitmap abstraction: seen[k] iff some prefix voter equals k
             forall|k: int| 0 <= k < n as int ==>
                 (#[trigger] seen@[k]) == (exists|j: int|
@@ -161,8 +164,33 @@ pub fn verify_qc_structure(qc: &QuorumCert, n: u32) -> (result: bool)
         assert(v_ghost == v_id);
         assert(v_ghost as int == v as int);
 
+        // From invariant (d) at k = v_ghost as int: since seen[v] == false,
+        // no prior index has voter == v_ghost. We capture that now while
+        // both invariants (c) and (d) still refer to the old `i`.
+        assert(seen@[v_ghost as int] == false);
+        assert(forall|j: int|
+            0 <= j < old_i ==> qc.votes@[j].voter as int != v_ghost as int)
+        by {
+            // Contrapositive of (d) at k = v_ghost as int.
+            assert(!(exists|j: int|
+                0 <= j < old_i && qc.votes@[j].voter as int == v_ghost as int));
+        };
+
         seen.set(v, true);
         i = i + 1;
+
+        // Re-establish (c) at the new i = old_i + 1.
+        assert forall|j: int, k: int| 0 <= j < k < i as int implies
+            qc.votes@[j].voter != qc.votes@[k].voter
+        by {
+            if k < old_i {
+                // Both indices in old prefix: covered by old (c).
+            } else {
+                // k == old_i, so qc.votes@[k].voter == v_ghost.
+                assert(qc.votes@[old_i].voter == v_ghost);
+                assert(qc.votes@[j].voter as int != v_ghost as int);
+            }
+        };
 
         // Re-establish (d) at the new i = old_i + 1.
         assert forall|k: int| 0 <= k < n as int implies

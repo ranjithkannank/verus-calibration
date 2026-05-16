@@ -1,0 +1,183 @@
+error: postcondition not satisfied
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:118:9
+    |
+118 |         result == (voters_distinct(*qc) && all_voters_in_range(*qc, n) && has_quorum(*qc, n)),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+229 |     votes_len >= threshold
+    |     ---------------------- at the end of the function body
+
+error: postcondition not satisfied
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:252:9
+    |
+244 | pub proof fn lemma_qc_has_honest_voter(qc: QuorumCert, n: u32, byzantine: Set<NodeId>)
+    | -------------------------------------------------------------------------------------- at the end of the function body
+...
+252 |         exists|honest: NodeId| voters(qc).contains(honest) && !byzantine.contains(honest),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:69:5
+   |
+69 | /     forall|i: int|
+70 | |         0 <= i < qc.votes@.len() ==>
+71 | |             signature_valid(pk_of(qc.votes@[i].voter), qc.proposal, qc.votes@[i].sig)
+   | |_____________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:71:35
+   |
+71 |             signature_valid(pk_of(qc.votes@[i].voter), qc.proposal, qc.votes@[i].sig)
+   |                                   ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:76:9
+   |
+76 | /         exists|i: int|
+77 | |             0 <= i < qc.votes@.len() && qc.votes@[i].voter == n)
+   | |_______________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:77:41
+   |
+77 |             0 <= i < qc.votes@.len() && qc.votes@[i].voter == n)
+   |                                         ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:81:5
+   |
+81 | /     forall|i: int, j: int|
+82 | |         0 <= i < j < qc.votes@.len() ==>
+83 | |             qc.votes@[i].voter != qc.votes@[j].voter
+   | |____________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:83:13
+   |
+83 |             qc.votes@[i].voter != qc.votes@[j].voter
+   |             ^^^^^^^^^^^^          ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:91:5
+   |
+91 | /     forall|i: int|
+92 | |         0 <= i < qc.votes@.len() ==>
+93 | |             (qc.votes@[i].voter as int) < (n as int)
+   | |____________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:93:14
+   |
+93 |             (qc.votes@[i].voter as int) < (n as int)
+   |              ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:175:21
+    |
+175 |               assert(!(exists|j: int|
+    |  _____________________^
+176 | |                 0 <= j < old_i && qc.votes@[j].voter as int == v_ghost as int));
+    | |______________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:176:35
+    |
+176 |                 0 <= j < old_i && qc.votes@[j].voter as int == v_ghost as int));
+    |                                   ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:171:16
+    |
+171 |           assert(forall|j: int|
+    |  ________________^
+172 | |             0 <= j < old_i ==> qc.votes@[j].voter as int != v_ghost as int)
+    | |__________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:172:32
+    |
+172 |             0 <= j < old_i ==> qc.votes@[j].voter as int != v_ghost as int)
+    |                                ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:183:9
+    |
+183 |         assert forall|j: int, k: int| 0 <= j < k < i as int implies
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:184:13
+    |
+184 |             qc.votes@[j].voter != qc.votes@[k].voter
+    |             ^^^^^^^^^^^^          ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:212:20
+    |
+212 |                 if exists|j: int| 0 <= j < i as int && qc.votes@[j].voter as int == k {
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:212:56
+    |
+212 |                 if exists|j: int| 0 <= j < i as int && qc.votes@[j].voter as int == k {
+    |                                                        ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:213:30
+    |
+213 |                     let j0 = choose|j: int| 0 <= j < i as int && qc.votes@[j].voter as int == k;
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:213:66
+    |
+213 |                     let j0 = choose|j: int| 0 <= j < i as int && qc.votes@[j].voter as int == k;
+    |                                                                  ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:140:13
+    |
+140 | /             forall|j: int, k: int| 0 <= j < k < i as int ==>
+141 | |                 qc.votes@[j].voter != qc.votes@[k].voter,
+    | |________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:141:17
+    |
+141 |                 qc.votes@[j].voter != qc.votes@[k].voter,
+    |                 ^^^^^^^^^^^^          ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:252:9
+    |
+252 |         exists|honest: NodeId| voters(qc).contains(honest) && !byzantine.contains(honest),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:252:64
+    |
+252 |         exists|honest: NodeId| voters(qc).contains(honest) && !byzantine.contains(honest),
+    |                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: Verus printed one or more automatically chosen quantifier triggers
+      because it had low confidence in the chosen triggers.
+      To suppress these messages, do one of the following:
+        (1) manually annotate a single desired trigger using #[trigger]
+            (example: forall|i: int, j: int| f(i) && #[trigger] g(i) && #[trigger] h(j)),
+        (2) manually annotate multiple desired triggers using #![trigger ...]
+            (example: forall|i: int| #![trigger f(i)] #![trigger g(i)] f(i) && g(i)),
+        (3) accept the automatically chosen trigger using #![auto]
+            (example: forall|i: int, j: int| #![auto] f(i) && g(i) && h(j))
+        (4) use the --triggers-mode silent command-line option to suppress all printing of triggers.
+      (Note: triggers are used by the underlying SMT theorem prover to instantiate quantifiers;
+      the theorem prover instantiates a quantifier whenever some expression matches the
+      pattern specified by one of the quantifier's triggers.)
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/quorum_cert.rs:252:9
+    |
+252 |         exists|honest: NodeId| voters(qc).contains(honest) && !byzantine.contains(honest),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+verification results:: 1 verified, 2 errors
+error: aborting due to 2 previous errors
+
