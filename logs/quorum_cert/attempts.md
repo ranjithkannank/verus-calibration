@@ -46,3 +46,15 @@ verification results:: 1 verified, 2 errors
 ```
 Notably the new asserts/invariants at lines 140, 171, 183 (the (c) invariant, the captured helper, and the re-establishment) all verified — no errors fired at any of those locations. Invariant (c) holds at loop exit ⇒ `voters_distinct(*qc)` is now part of the loop-exit context for the final return.
 **Next idea:** Design step 6 — lift `lemma_prefix_extend`, `lemma_push_to_set`, `lemma_to_set_finite`, `lemma_set_insert_new_len`, `lemma_range_nodeid_len` verbatim from `quorum_count.rs`. Write `lemma_distinct_seq_to_set_len`, the internal `voter_seq` spec fn, `lemma_voters_as_to_set`, and the bridging `lemma_distinct_voters_len(*qc)`. Call it after the loop, assert `threshold as nat == byzantine_threshold(n)`, return `votes_len >= threshold`.
+
+## Attempt 5 — 2026-05-16
+**Sub-task:** Design step 6 — bridge `voters(qc).len()` ↔ `qc.votes.len()` under distinct voters to close the final-return postcondition path. Lift helper lemmas from `quorum_count.rs`, write the bridging machinery (`voter_seq`, `lemma_distinct_seq_to_set_len`, `lemma_voters_as_to_set`, `lemma_distinct_voters_len`), and call them after the loop.
+**Approach:** Lifted `lemma_push_to_set`, `lemma_to_set_finite`, `lemma_set_insert_new_len`, `lemma_range_nodeid_len` verbatim from `quorum_count.rs`. Added internal `spec fn voter_seq(qc)` (Seq projection onto NodeIds). Wrote `lemma_distinct_seq_to_set_len` by induction on Seq length (using `lemma_push_to_set` + `lemma_set_insert_new_len`). Wrote `lemma_voters_as_to_set` via extensional set equality on `Set::new` vs `Seq::to_set`. Wrote `lemma_distinct_voters_len` chaining the two. In `verify_qc_structure`, after the loop, called `lemma_distinct_voters_len(*qc)` inside a `proof { ... }` block (needed since `verify_qc_structure` is `exec fn`), then asserted `threshold as nat == byzantine_threshold(n)` and the threshold-vs-quorum equivalence.
+**Verifier output:** 9 verified, 1 error (down from 2). Only `lemma_qc_has_honest_voter` postcondition (line 444) remains:
+```
+error: postcondition not satisfied
+444 |         exists|honest: NodeId| voters(qc).contains(honest) && !byzantine.contains(honest),
+verification results:: 9 verified, 1 errors
+```
+The final return path of `verify_qc_structure` now verifies cleanly — all 4 helper lemmas + `verify_qc_structure` verified in this attempt.
+**Next idea:** Design steps 7–8 — prove `lemma_qc_has_honest_voter` by contradiction. Use `lemma_range_nodeid_len(n)` for the universe; show `voters(qc).subset_of(universe)` and `voters(qc).finite()`. Then under negation of the existential, prove `voters(qc).subset_of(byzantine)` (every honest voter is byzantine), call `vstd::set_lib::lemma_len_subset` to get `voters(qc).len() <= byzantine.len()`, then drive arithmetic contradiction from `has_quorum` + `byzantine.len() * 3 < n`.

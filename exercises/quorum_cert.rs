@@ -104,6 +104,189 @@ pub open spec fn is_valid_qc(qc: QuorumCert, n: u32) -> bool {
     &&& has_quorum(qc, n)
 }
 
+// --- Internal helpers (not part of the frozen spec) -------------------------
+
+// The Seq projection of a QC's votes onto their voter NodeIds.
+spec fn voter_seq(qc: QuorumCert) -> Seq<NodeId> {
+    Seq::new(qc.votes@.len(), |i: int| qc.votes@[i].voter)
+}
+
+// --- Helper lemmas (lifted from quorum_count.rs) ---------------------------
+
+// Helper lemma: s.push(x).to_set() == s.to_set().insert(x)
+proof fn lemma_push_to_set(s: Seq<NodeId>, x: NodeId)
+    ensures s.push(x).to_set() =~= s.to_set().insert(x),
+{
+    assert forall|y: NodeId|
+        s.push(x).to_set().contains(y) <==> s.to_set().insert(x).contains(y)
+    by {
+        if s.push(x).to_set().contains(y) {
+            assert(s.push(x).contains(y));
+            if y == x {
+            } else {
+                let j = choose|j: int| 0 <= j < s.push(x).len() && s.push(x)[j] == y;
+                if j < s.len() {
+                    assert(s[j] == y);
+                    assert(s.contains(y));
+                } else {
+                    assert(s.push(x)[s.len() as int] == x);
+                    assert(false);
+                }
+            }
+        }
+        if s.to_set().insert(x).contains(y) {
+            if y == x {
+                assert(s.push(x)[s.len() as int] == x);
+                assert(s.push(x).contains(x));
+            } else {
+                assert(s.to_set().contains(y));
+                assert(s.contains(y));
+                let j = choose|j: int| 0 <= j < s.len() && s[j] == y;
+                assert(s.push(x)[j] == s[j]);
+                assert(s.push(x).contains(y));
+            }
+        }
+    };
+    assert(s.push(x).to_set() =~= s.to_set().insert(x));
+}
+
+// Helper lemma: s.to_set() is finite
+proof fn lemma_to_set_finite(s: Seq<NodeId>)
+    ensures s.to_set().finite(),
+{
+}
+
+// Helper lemma: inserting x not in s increases len by 1
+proof fn lemma_set_insert_new_len(s: Set<NodeId>, x: NodeId)
+    requires s.finite(), !s.contains(x),
+    ensures s.insert(x).len() == s.len() + 1,
+{
+    vstd::set::axiom_set_insert_len(s, x);
+}
+
+// Helper lemma: the set of NodeIds strictly below n is finite with exactly n elements
+proof fn lemma_range_nodeid_len(n: u32)
+    ensures
+        Set::<NodeId>::new(|k: NodeId| (k as int) < n as int).finite(),
+        Set::<NodeId>::new(|k: NodeId| (k as int) < n as int).len() == n as nat,
+    decreases n,
+{
+    let s = Set::<NodeId>::new(|k: NodeId| (k as int) < n as int);
+    if n == 0 {
+        assert(s =~= Set::<NodeId>::empty());
+    } else {
+        let n1: u32 = (n - 1) as u32;
+        let m: NodeId = n1;
+        let s1 = Set::<NodeId>::new(|k: NodeId| (k as int) < n1 as int);
+        lemma_range_nodeid_len(n1);
+        assert(s1.insert(m) =~= s) by {
+            assert forall|k: NodeId| s1.insert(m).contains(k) <==> s.contains(k) by {};
+        };
+        assert(!s1.contains(m));
+        vstd::set::axiom_set_insert_len(s1, m);
+    }
+}
+
+// Helper lemma: distinct seq's to_set has the same length as the seq.
+proof fn lemma_distinct_seq_to_set_len(s: Seq<NodeId>)
+    requires
+        forall|i: int, j: int| 0 <= i < j < s.len() ==> s[i] != s[j],
+    ensures
+        s.to_set().finite(),
+        s.to_set().len() == s.len(),
+    decreases s.len(),
+{
+    if s.len() == 0 {
+        assert(s.to_set() =~= Set::<NodeId>::empty()) by {
+            assert forall|y: NodeId| !s.to_set().contains(y) by {
+                if s.to_set().contains(y) {
+                    let j = choose|j: int| 0 <= j < s.len() && s[j] == y;
+                    assert(false);
+                }
+            };
+        };
+    } else {
+        let last_idx = (s.len() - 1) as int;
+        let prefix = s.subrange(0, last_idx);
+        let last = s[last_idx];
+        // s == prefix.push(last)
+        assert(s =~= prefix.push(last)) by {
+            assert forall|k: int| 0 <= k < s.len() implies s[k] == prefix.push(last)[k] by {
+                if k < last_idx {
+                    assert(prefix[k] == s[k]);
+                } else {
+                    assert(k == last_idx);
+                }
+            };
+        };
+        // prefix is also distinct
+        assert(forall|i: int, j: int| 0 <= i < j < prefix.len() ==> prefix[i] != prefix[j]) by {
+            assert forall|i: int, j: int| 0 <= i < j < prefix.len() implies prefix[i] != prefix[j] by {
+                assert(prefix[i] == s[i]);
+                assert(prefix[j] == s[j]);
+            };
+        };
+        lemma_distinct_seq_to_set_len(prefix);
+        // last is not in prefix
+        assert(!prefix.to_set().contains(last)) by {
+            if prefix.to_set().contains(last) {
+                let j = choose|j: int| 0 <= j < prefix.len() && prefix[j] == last;
+                assert(s[j] == last);
+                assert(s[last_idx] == last);
+                assert(j < last_idx);
+                assert(s[j] != s[last_idx]);
+                assert(false);
+            }
+        };
+        lemma_push_to_set(prefix, last);
+        lemma_set_insert_new_len(prefix.to_set(), last);
+        assert(s.to_set() =~= prefix.to_set().insert(last));
+    }
+}
+
+// Helper lemma: voters(qc) is exactly the to_set of voter_seq(qc).
+proof fn lemma_voters_as_to_set(qc: QuorumCert)
+    ensures
+        voters(qc) =~= voter_seq(qc).to_set(),
+{
+    let vs = voter_seq(qc);
+    assert forall|x: NodeId| voters(qc).contains(x) <==> vs.to_set().contains(x) by {
+        // voters(qc).contains(x) <==> exists|i| 0 <= i < qc.votes@.len() && qc.votes@[i].voter == x
+        // vs.to_set().contains(x) <==> exists|i| 0 <= i < vs.len() && vs[i] == x
+        // and vs.len() == qc.votes@.len(), vs[i] == qc.votes@[i].voter
+        if voters(qc).contains(x) {
+            let i = choose|i: int| 0 <= i < qc.votes@.len() && qc.votes@[i].voter == x;
+            assert(vs[i] == qc.votes@[i].voter);
+            assert(vs[i] == x);
+            assert(vs.contains(x));
+        }
+        if vs.to_set().contains(x) {
+            let i = choose|i: int| 0 <= i < vs.len() && vs[i] == x;
+            assert(vs[i] == qc.votes@[i].voter);
+        }
+    };
+}
+
+// Bridge: distinct voters ⇒ |voters(qc)| == qc.votes.len()
+proof fn lemma_distinct_voters_len(qc: QuorumCert)
+    requires voters_distinct(qc),
+    ensures
+        voters(qc).finite(),
+        voters(qc).len() == qc.votes@.len(),
+{
+    let vs = voter_seq(qc);
+    // vs is distinct because voters_distinct(qc)
+    assert(forall|i: int, j: int| 0 <= i < j < vs.len() ==> vs[i] != vs[j]) by {
+        assert forall|i: int, j: int| 0 <= i < j < vs.len() implies vs[i] != vs[j] by {
+            assert(vs[i] == qc.votes@[i].voter);
+            assert(vs[j] == qc.votes@[j].voter);
+        };
+    };
+    lemma_distinct_seq_to_set_len(vs);
+    lemma_voters_as_to_set(qc);
+    assert(vs.len() == qc.votes@.len());
+}
+
 // --- Obligation 1: structural runtime check ---------------------------------
 //
 // Verify the parts of `is_valid_qc` that do NOT depend on the crypto
@@ -221,11 +404,20 @@ pub fn verify_qc_structure(qc: &QuorumCert, n: u32) -> (result: bool)
             }
         };
     }
-    // |voters(qc)| == qc.votes.len() under distinct + in-range (helper lemma in
-    // later attempt). For now just emit the comparison — verification will
-    // fail on the postcondition's has_quorum part; that's expected for step 3.
+    // At loop exit: invariant (b) is all_voters_in_range, (c) is voters_distinct.
+    // Bridge: voters(qc).len() == qc.votes.len() under voters_distinct.
+    proof {
+        assert(voters_distinct(*qc));
+        assert(all_voters_in_range(*qc, n));
+        lemma_distinct_voters_len(*qc);
+        assert(voters(*qc).len() == qc.votes@.len());
+    }
+
     let votes_len: u64 = qc.votes.len() as u64;
     let threshold: u64 = 2u64 * (n as u64) / 3u64 + 1u64;
+    assert(threshold as nat == byzantine_threshold(n));
+    assert(votes_len as nat == qc.votes@.len());
+    assert((votes_len >= threshold) == (voters(*qc).len() >= byzantine_threshold(n)));
     votes_len >= threshold
 }
 
