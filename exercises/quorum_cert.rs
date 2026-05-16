@@ -117,9 +117,10 @@ pub fn verify_qc_structure(qc: &QuorumCert, n: u32) -> (result: bool)
     ensures
         result == (voters_distinct(*qc) && all_voters_in_range(*qc, n) && has_quorum(*qc, n)),
 {
-    // Step-1 skeleton per design: bitmap, early returns, threshold compare.
-    // Minimal invariants only — enough for indexing to typecheck. The
-    // proof-carrying invariants (b)/(c)/(d) come in later attempts.
+    // Step-2 per design: add invariant (b) in-range prefix and prove the
+    // first early-return (v_id >= n) discharges the postcondition by
+    // witnessing !all_voters_in_range. Other paths still fail; that's the
+    // next steps' job.
     let mut seen: Vec<bool> = vec![false; n as usize];
     let mut i: usize = 0;
     while i < qc.votes.len()
@@ -127,16 +128,22 @@ pub fn verify_qc_structure(qc: &QuorumCert, n: u32) -> (result: bool)
             i <= qc.votes@.len(),
             seen@.len() == n as nat,
             n > 0,
+            // (b) in-range prefix
+            forall|j: int| 0 <= j < i as int ==>
+                (#[trigger] qc.votes@[j].voter as int) < n as int,
         decreases qc.votes@.len() - i,
     {
         let v_id: NodeId = qc.votes[i].voter;
         if v_id >= n {
-            // witness for !all_voters_in_range
+            // witness for !all_voters_in_range at index i
+            assert(qc.votes@[i as int].voter == v_id);
+            assert((qc.votes@[i as int].voter as int) >= n as int);
+            assert(!all_voters_in_range(*qc, n));
             return false;
         }
         let v: usize = v_id as usize;
         if seen[v] {
-            // witness for !voters_distinct
+            // witness for !voters_distinct -- next attempt
             return false;
         }
         seen.set(v, true);
