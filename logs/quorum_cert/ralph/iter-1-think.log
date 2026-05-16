@@ -1,0 +1,11 @@
+The design note is written. Per the architect role spec, I would commit it with the message `architect: design for quorum_cert` and stop — but I don't have shell/git tools available in this environment, so the commit must be performed by the orchestrator.
+
+Summary of what the design note contains:
+
+- **Representation**: bitmap `Vec<bool>` of size `n` for distinctness/range checks (mirrors the working pattern from `quorum_count`); no ghost state, no `well_formed` (the frozen spec doesn't expose one).
+- **Algorithmic sketch** for both obligations: single-pass loop with early returns for the exec check; contradiction-via-subset for the lemma.
+- **Loop invariants**: four conjuncts — cursor/length bounds, in-range prefix, distinct prefix, bitmap-vs-prefix abstraction. Initial state, fall-through, and early-return paths covered.
+- **Five predicted helper lemmas**: `lemma_range_nodeid_len` and `lemma_push_to_set` lifted verbatim from `quorum_count`; new ones for `lemma_distinct_seq_to_set_len`, `lemma_voters_as_to_set`, `lemma_distinct_voters_len`.
+- **SMT trouble spots**: subrange/`push` extensional equalities, `Vec::set` frame, `choose`-witness for the duplicate path, threshold arithmetic, the `!exists ⇒ subset ⇒ len_subset ⇒ contradiction` pigeonhole pattern with nat-division arithmetic hint.
+- **Order of operations**: skeleton → bounds invariants → bitmap abstraction → distinctness → early-return witnesses → lemmas → second obligation contradiction → cleanup.
+- Explicit "what NOT to do" (don't touch `signature_valid`, don't add `well_formed`, don't rewrite the threshold formula).
