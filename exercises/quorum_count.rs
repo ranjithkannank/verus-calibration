@@ -121,6 +121,31 @@ proof fn lemma_set_insert_existing(s: Set<NodeId>, x: NodeId)
     };
 }
 
+// Helper lemma: the set of NodeIds strictly below n is finite with exactly n elements
+proof fn lemma_range_nodeid_len(n: u32)
+    ensures
+        Set::<NodeId>::new(|k: NodeId| (k as int) < n as int).finite(),
+        Set::<NodeId>::new(|k: NodeId| (k as int) < n as int).len() == n as nat,
+    decreases n,
+{
+    let s = Set::<NodeId>::new(|k: NodeId| (k as int) < n as int);
+    if n == 0 {
+        // u32 values are always >= 0, so s is empty
+        assert(s =~= Set::<NodeId>::empty());
+    } else {
+        let n1: u32 = (n - 1) as u32;
+        let m: NodeId = n1;
+        let s1 = Set::<NodeId>::new(|k: NodeId| (k as int) < n1 as int);
+        lemma_range_nodeid_len(n1);
+        // s = s1 ∪ {m}: k < n iff k < n-1 or k == n-1
+        assert(s1.insert(m) =~= s) by {
+            assert forall|k: NodeId| s1.insert(m).contains(k) <==> s.contains(k) by {};
+        };
+        assert(!s1.contains(m)); // m = n-1 is not < n-1
+        vstd::set::axiom_set_insert_len(s1, m);
+    }
+}
+
 pub fn is_byzantine_quorum(voters: &Vec<NodeId>, n: u32) -> (result: bool)
     requires
         n > 0,
@@ -134,6 +159,10 @@ pub fn is_byzantine_quorum(voters: &Vec<NodeId>, n: u32) -> (result: bool)
     // The vec macro gives us these specs:
     assert(seen@.len() == n as nat);
     assert(forall|k: int| 0 <= k < n as int ==> seen@[k] == false);
+
+    // Establish loop-entry invariant (d) at i=0: subrange(0,0) is empty, to_set is empty, len 0
+    assert(voters@.subrange(0, 0int) =~= Seq::<NodeId>::empty());
+    assert(voters@.subrange(0, 0int).to_set() =~= Set::<NodeId>::empty());
 
     let mut count: u64 = 0;
     let mut i: usize = 0;
@@ -251,7 +280,23 @@ pub fn is_byzantine_quorum(voters: &Vec<NodeId>, n: u32) -> (result: bool)
             };
 
             // (e): count = count_old + 1 <= n
-            assert(count as nat <= n as nat);
+            // all voters are < n, so at most n distinct NodeIds exist in pref_new
+            assert(count as nat <= n as nat) by {
+                let universe = Set::<NodeId>::new(|k: NodeId| (k as int) < n as int);
+                lemma_range_nodeid_len(n);
+                assert(pref_new.to_set().subset_of(universe)) by {
+                    assert forall|k: NodeId| pref_new.to_set().contains(k) implies
+                        universe.contains(k)
+                    by {
+                        if pref_new.to_set().contains(k) {
+                            let j = choose|j: int| 0 <= j < pref_new.len() && pref_new[j] == k;
+                            assert(pref_new[j] == voters@[j]);
+                            assert((voters@[j] as int) < n as int);
+                        }
+                    };
+                };
+                vstd::set_lib::lemma_len_subset::<NodeId>(pref_new.to_set(), universe);
+            };
 
         } else {
             // Case B: duplicate voter – seen[v] == true, so v_ghost already in pref_old
