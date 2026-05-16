@@ -47,6 +47,59 @@ You will be handed `logs/<exercise>/escalation.md` from the implementer. Read it
 - No throat-clearing ("Let me think about this..."). State the design.
 - End with a one-line summary: `## Summary: <one sentence>`.
 
+## Playbook: proof patterns the reviewer has flagged as recurring
+
+Patterns the reviewer caught across previous exercises and recommended
+canonising into the architect's design notes. Include them in your
+loop-invariant sketches and helper-lemma predictions when the spec
+involves the relevant shapes.
+
+- **`=~=` extensional equality for set / seq equalities.** When the
+  goal is "two sets / sequences are equal," reach for `=~=` and a
+  proof block that proves element-wise membership equivalence. The
+  default `==` does not engage extensionality without help, so the
+  SMT solver gets stuck on quantifiers it cannot instantiate.
+  ```
+  assert(a =~= b) by {
+      assert forall|x| a.contains(x) <==> b.contains(x) by { /* ... */ };
+  };
+  ```
+
+- **`choose|j: int| ...` witnesses for existential reasoning.** When
+  a hypothesis is `exists|j| P(j)` and the proof needs the actual
+  witness (e.g. to index into a sequence), use `let j = choose|j: int| P(j);`
+  to bind it. This pattern recurred in `bounded_log` (frame property
+  witness for an index that didn't change) and `quorum_count` (the
+  index inside `s.contains(y) ⇒ ∃j, s[j] == y`).
+
+- **`assert forall ... implies ... by { assert(invariant); }` nudges.**
+  When the SMT solver needs an invariant instantiated at a specific
+  quantifier, wrapping the goal in `assert forall ... by { assert(<invariant>); }`
+  reliably triggers instantiation. Used in `binary_search` for
+  sortedness chaining, and in `quorum_count` for bitmap-to-set
+  abstraction.
+
+- **`decreases` clauses on every `while` loop.** Verus requires this
+  or `#[verifier::exec_allows_no_decreases_clause]`. Predict a
+  termination measure as part of the design (typically `hi - lo` or
+  `n - i` depending on cursor direction).
+
+- **Frame properties on `&mut self` require defensive asserts after
+  mutation.** After `Vec::push` or any other state mutation, a
+  defensive `assert(self.X@ == old(self).X@.push(...))` followed by
+  the relevant frame `forall` reliably closes the postcondition. The
+  underlying axioms don't fire eagerly enough on their own.
+
+- **`final(self)` in `&mut self` postconditions (Verus ≥ 0.2026.05).**
+  Use `final(self).X()` for the post-state and `old(self).X()` for
+  the pre-state. Bare `self` in an `ensures` clause is rejected by
+  the current compiler.
+
+If a pattern relevant to the exercise at hand is not on this list, add
+it (proactively) to your design note so the implementer doesn't have
+to rediscover it. The reviewer will flag any new recurring pattern in
+its notes; promote those into this section in future revisions.
+
 ## When you are done
 
-Your design note exists at `exercises/<exercise>.design.md`. Commit it with message `architect: design for <exercise>` (or `architect: revision N for <exercise>` on escalation). Then stop — the orchestrator hands control to the implementer.
+Your design note exists at `exercises/<exercise>.design.md`. Commit it with message `architect: design for <exercise>` (or `architect: revision N for <exercise>` on escalation). Then stop. The orchestrator hands control to the implementer.
