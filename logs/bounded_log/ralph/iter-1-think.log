@@ -1,0 +1,8 @@
+Design note written to `exercises/bounded_log.design.md`. Per the architect role spec, my work here is done — I am not permitted to run shell/git commands, so the orchestrator should run:
+
+```
+git add exercises/bounded_log.design.md
+git commit -m "architect: design for bounded_log"
+```
+
+to land the commit, then hand control to the implementer.
