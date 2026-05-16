@@ -1,0 +1,8 @@
+Attempt 4 complete. Summary:
+
+- **Sub-task addressed (design step 4):** Added loop invariant `(c)` — pairwise distinct voters in the prefix — and re-established it in the fall-through branch using invariant `(d)` at `k = v_ghost as int` to extract the helper fact that no prior index has voter `== v_ghost`.
+- **Result:** `1 verified, 2 errors` (same as attempt 3, no regression). Importantly, all the new asserts at lines 140/171/183 (the invariant, the captured contrapositive, and the case-split re-establishment) verified cleanly — invariant `(c)` is now part of the loop-exit context.
+- **Remaining errors** are both expected per the plan:
+  - Final return needs the bridging lemma `voters(qc).len() == qc.votes.len()` + threshold arithmetic (design step 6).
+  - `lemma_qc_has_honest_voter` body still empty (design steps 7–8).
+- **Status:** `verus_failed`. Logged in `attempts.md`, raw output at `raw/attempt-4.txt`, committed, tree clean.
