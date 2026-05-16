@@ -17,7 +17,7 @@ fi
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-EXERCISES=(binary_search bounded_log quorum_count)
+EXERCISES=(binary_search bounded_log quorum_count quorum_cert)
 
 for ex in "${EXERCISES[@]}"; do
   echo

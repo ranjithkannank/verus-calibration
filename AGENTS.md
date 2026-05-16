@@ -38,6 +38,17 @@ Keep raw verifier output in `logs/<exercise>/raw/attempt-N.txt`. Commit per atte
 - 3 consecutive attempts failing on the same proof obligation → implementer writes `logs/<exercise>/escalation.md` and stops. Orchestrator re-invokes the architect.
 - Hitting the per-exercise iteration cap → implementer writes `logs/<exercise>/blocked.md` with the full context. Stop. Move to next exercise.
 
+## Uninterpreted spec functions and trust boundaries
+
+Some exercises declare `pub uninterp spec fn` predicates with no body
+(e.g. `signature_valid` in `quorum_cert.rs`). These are deliberately
+opaque trust-boundary abstractions. The implementer must not provide a
+body for them and must not add an `assume_specification` against them.
+Reasoning about them happens through the helper `spec fn`s and lemmas
+that the verified code calls. A real deployment connects them to a
+vetted external library via an `assume_specification` outside this
+repo; here that connection is out of scope.
+
 ## On SMT timeouts
 
 Do not just raise the rlimit. First:
@@ -54,6 +65,7 @@ Work in this order. Do not start the next exercise until the previous one is eit
 1. `exercises/binary_search.rs`
 2. `exercises/bounded_log.rs`
 3. `exercises/quorum_count.rs`
+4. `exercises/quorum_cert.rs` — first step on the BFT-for-aerospace path. Two obligations: an exec structural check, and a proof-only safety lemma about honest voters.
 
 ## Multi-agent workflow (brief)
 

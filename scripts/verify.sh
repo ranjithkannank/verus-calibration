@@ -8,6 +8,7 @@ EXERCISES=(
   exercises/binary_search.rs
   exercises/bounded_log.rs
   exercises/quorum_count.rs
+  exercises/quorum_cert.rs
 )
 
 fail=0

@@ -18,18 +18,25 @@ split → integration contracts → **vericoding as proof-grade feedback**).
 
 ## Status
 
-All three exercises landed `DONE` (verus passed + reviewer
+The original three exercises landed `DONE` (verus passed + reviewer
 `APPROVE`). Calibration is complete; the writeup is published.
 
 **Blog post:** [Wiring a Formal Verifier into an Autonomous Coding
 Loop](https://ranjithkannan.com/2026/05/10/verus-calibration-formal-verifier-loop/)
 on ranjithkannan.com.
 
-| Exercise         | Status | Attempts to verify | Notes                                          |
-|------------------|--------|--------------------|------------------------------------------------|
-| binary_search    | DONE   | 1                  | Clean first-try; architect's design predicted every invariant. |
-| bounded_log      | DONE   | 1 (post re-freeze) | Surfaced a Verus version mismatch in the operator-authored frozen spec; the reviewer's REJECT was the methodology working as intended. |
-| quorum_count     | DONE   | 2                  | Concrete-to-abstract proof bridge; implementer grepped local `vstd` and wrote a recursive cardinality lemma. |
+The repo is now being extended toward the actual problem the
+calibration was preparation for: making verified Byzantine-tolerant
+systems cheaper to build for safety-critical applications. The first
+step on that path is a fourth exercise, `quorum_cert`, currently in
+progress.
+
+| Exercise         | Status      | Attempts to verify | Notes                                          |
+|------------------|-------------|--------------------|------------------------------------------------|
+| binary_search    | DONE        | 1                  | Clean first-try; architect's design predicted every invariant. |
+| bounded_log      | DONE        | 1 (post re-freeze) | Surfaced a Verus version mismatch in the operator-authored frozen spec; the reviewer's REJECT was the methodology working as intended. |
+| quorum_count     | DONE        | 2                  | Concrete-to-abstract proof bridge; implementer grepped local `vstd` and wrote a recursive cardinality lemma. |
+| quorum_cert      | in progress | —                  | First BFT-shaped exercise. Two obligations: structural verification of a quorum certificate, and the safety lemma that a valid QC contains an honest voter. |
 
 The full narrative lives in `writeup/blog-post.md` (publication-ready)
 and `writeup/writeup.md` (raw run record).
@@ -67,7 +74,8 @@ verus-calibration/
 ├── exercises/
 │   ├── binary_search.rs   exercise 1: frozen spec, unimplemented body
 │   ├── bounded_log.rs     exercise 2: frame property on append
-│   └── quorum_count.rs    exercise 3: distinct-count vs Set::len()
+│   ├── quorum_count.rs    exercise 3: distinct-count vs Set::len()
+│   └── quorum_cert.rs     exercise 4: BFT quorum certificate + safety lemma
 ├── .claude/agents/
 │   ├── architect.md       Opus 4.7 — design, no Edit, no Bash(verus)
 │   ├── implementer.md     Sonnet 4.6 — full toolset incl. verus

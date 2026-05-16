@@ -95,6 +95,16 @@ involves the relevant shapes.
   the pre-state. Bare `self` in an `ensures` clause is rejected by
   the current compiler.
 
+- **Pigeonhole / cardinality-bound proofs over finite universes.**
+  When the obligation is "a set with at least k elements drawn from a
+  universe of size ≤ k+m must overlap with any subset of size > m,"
+  the proof shape is: bound the universe size with a recursive lemma
+  (model on quorum_count's `lemma_range_nodeid_len`), establish subset
+  monotonicity via `vstd::set_lib::lemma_len_subset`, and conclude
+  with arithmetic on the resulting cardinalities. The Byzantine
+  intersection step in quorum-certificate safety is the canonical
+  example.
+
 If a pattern relevant to the exercise at hand is not on this list, add
 it (proactively) to your design note so the implementer doesn't have
 to rediscover it. The reviewer will flag any new recurring pattern in

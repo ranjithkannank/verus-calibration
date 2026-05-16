@@ -56,6 +56,7 @@ case "$EXERCISE" in
   binary_search) ATTEMPT_CAP=10 ;;
   bounded_log)   ATTEMPT_CAP=20 ;;
   quorum_count)  ATTEMPT_CAP=20 ;;
+  quorum_cert)   ATTEMPT_CAP=20 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 
