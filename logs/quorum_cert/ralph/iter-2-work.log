@@ -1,0 +1,6 @@
+Attempt 2 complete. Summary:
+
+- **Sub-task tackled**: Design step 2 — added invariant `(b)` in-range prefix (`forall|j: int| 0 <= j < i ==> qc.votes@[j].voter as int < n as int`) and three asserts on the first early-return path (`v_id >= n`) to chain the witness for `!all_voters_in_range`.
+- **Result**: verus still exits 1 with 3 errors, but the first early-return path no longer appears in the error list. The errors are now at line 147 (duplicate-detect early return — needs `(c)`/`(d)`), line 157 (final threshold — needs bridge lemma), and line 180 (lemma body still empty). Progress is real and bounded.
+- **Status**: `verus_failed` — orchestrator will iterate.
+- **Tree**: clean except for the orchestrator's own `ralph/iter-2-work.log` working file (not mine to commit).
