@@ -48,16 +48,14 @@ impl Log {
             result.capacity() == capacity as nat,
             result.view().len() == 0,
     {
-        // TODO(loop): fill in. Do not modify any spec above.
-        unimplemented!()
+        Log { cap: capacity, msgs: Vec::new() }
     }
 
     pub fn len(&self) -> (result: usize)
         requires self.well_formed(),
         ensures result as nat == self.view().len(),
     {
-        // TODO(loop)
-        unimplemented!()
+        self.msgs.len()
     }
 
     pub fn get(&self, index: usize) -> (result: Option<Message>)
@@ -67,8 +65,11 @@ impl Log {
                 result == Some::<Message>(self.view()[index as int]),
             (index as int) >= self.view().len() ==> result.is_none(),
     {
-        // TODO(loop)
-        unimplemented!()
+        if index < self.msgs.len() {
+            Some(self.msgs[index])
+        } else {
+            None
+        }
     }
 
     pub fn append(&mut self, msg: Message) -> (result: Result<(), ()>)
@@ -88,8 +89,16 @@ impl Log {
                 &&& final(self).view() == old(self).view()
             },
     {
-        // TODO(loop)
-        unimplemented!()
+        if self.msgs.len() < self.cap {
+            self.msgs.push(msg);
+            // Help the solver with the frame property
+            assert(self.msgs@ == old(self).msgs@.push(msg));
+            assert(forall|i: int| 0 <= i < old(self).msgs@.len()
+                   ==> self.msgs@[i] == old(self).msgs@[i]);
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 }
 
