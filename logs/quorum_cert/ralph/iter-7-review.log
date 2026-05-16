@@ -1,0 +1,10 @@
+Review complete. Conclusion: **APPROVE** — committed as `a81f5fb`.
+
+All five checks passed:
+1. `requires`/`ensures` clauses byte-identical to `spec-frozen-quorum_cert`.
+2. All pre-existing `spec fn` bodies untouched; only new helpers added.
+3. No `assume(`, `external_body`, `unimplemented!`, `unreachable!`, `panic!`, or `assume_specification` introduced.
+4. No new `requires` on pre-existing functions; new helper-lemma `requires` clauses are non-trivializing antecedents.
+5. No `closed`/`open` toggles on pre-existing declarations.
+
+Review written to `logs/quorum_cert/review.md`.
