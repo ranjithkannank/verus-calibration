@@ -18,10 +18,17 @@ split → integration contracts → **vericoding as proof-grade feedback**).
 
 ## Status
 
-Setup complete; the calibration run is the next step. See
-`writeup/outline.md` for the planned two-post split and
-`writeup/results_template.md` for the table that gets filled in from the
-logs.
+All three exercises landed `DONE` (verus passed + reviewer
+`APPROVE`). Calibration is complete; the writeup is drafted.
+
+| Exercise         | Status | Attempts to verify | Notes                                          |
+|------------------|--------|--------------------|------------------------------------------------|
+| binary_search    | DONE   | 1                  | Clean first-try; architect's design predicted every invariant. |
+| bounded_log      | DONE   | 1 (post re-freeze) | Surfaced a Verus version mismatch in the operator-authored frozen spec; the reviewer's REJECT was the methodology working as intended. |
+| quorum_count     | DONE   | 2                  | Concrete-to-abstract proof bridge; implementer grepped local `vstd` and wrote a recursive cardinality lemma. |
+
+The full narrative lives in `writeup/blog-post.md` (publication-ready)
+and `writeup/writeup.md` (raw run record).
 
 ## Quickstart
 
@@ -72,7 +79,9 @@ verus-calibration/
 │   └── verify.sh          run `verus` on all exercises
 ├── logs/<exercise>/       attempt logs, raw verifier output, reviews
 └── writeup/
-    ├── outline.md         the two blog posts that come out of this
+    ├── blog-post.md      publication-ready post in the author's voice
+    ├── writeup.md        raw run record, full detail (5k+ words)
+    ├── outline.md        original two-post split plan
     └── results_template.md   data table + failure taxonomy skeleton
 ```
 
@@ -215,21 +224,37 @@ failure taxonomy can quote actual diffs.
 ## Why this matters
 
 The blog series so far has tightened the feedback signal an autonomous
-coding loop runs against — first plain tests, then mutation testing,
+coding loop runs against: first plain tests, then mutation testing,
 then splitting the auditor from the writer, then catching the gap
 between green tests and integration contracts. Each step closes a hole
 through which a wrong loop could still pass.
 
-A formal verifier is the limit of that progression. It's a feedback
-signal the agent can't satisfy except by either (a) weakening the spec
-or (b) actually being correct. The whole experiment is the empirical
-test of whether path (a) can be ruled out by rules and tooling alone.
+A formal verifier is the limit of that progression. It is a feedback
+signal the agent cannot satisfy except by either weakening the spec or
+actually being correct. The whole experiment is the empirical test of
+whether the first path can be ruled out by rules and tooling alone.
 
-The aerospace-software pivot motivating this calibration sits one layer
-out: if vericoding works for small primitives, then a verified
-Byzantine-fault-tolerant sensor fusion system becomes a plausible
-weekend-followed-by-a-quarter project rather than a 6-month research
-endeavor.
+## Related work and next steps
+
+Microsoft Research's [verus-proof-synthesis][msft] is the closest prior
+work: AutoVerus ([arXiv:2409.13082][autoverus], OOPSLA 2025) for
+single-function tasks, and VeruSAGE ([arXiv:2512.18436][verusage]) for
+multi-module code. Both are LLM-based on OpenAI / Azure OpenAI, with a
+single-agent pipeline. The differentiator of this project is the
+separate audit role on a different model, the commit-time
+spec-preservation hook running alongside the LLM audit, and per-attempt
+commits as the unit of evaluation. The combination is what the
+bounded_log `REJECT` result depended on.
+
+The concrete next step is to draw tasks from VeruSAGE-Bench (849 tasks
+across real distributed systems, OS kernels, storage), run them
+through this loop, and use AutoVerus and VeruSAGE as baselines on the
+same tasks. That gets us comparable-to-published numbers on multi-module
+Verus code without inventing exercises.
+
+[msft]: https://github.com/microsoft/verus-proof-synthesis
+[autoverus]: https://arxiv.org/abs/2409.13082
+[verusage]: https://arxiv.org/abs/2512.18436
 
 ## License
 
@@ -241,3 +266,5 @@ Writing in `writeup/`, including the outline and any blog drafts: CC BY 4.0.
 - The Ralph pattern: Geoffrey Huntley.
 - The autoresearch framing: Andrej Karpathy.
 - Verus: the verus-lang team.
+- Prior work on LLM-based Verus proof synthesis: Microsoft Research's
+  AutoVerus / VeruSAGE teams.
