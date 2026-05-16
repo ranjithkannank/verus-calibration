@@ -1,0 +1,21 @@
+Attempt 1 is complete. Here's the summary:
+
+## What happened
+
+**Implementation**: Wrote a bitmap-backed distinct-count approach with:
+- `seen: Vec<bool>` of size `n` (bitmap)
+- `count: u64` counter
+- Four-conjunct loop invariant: cursor bounds, bitmap abstraction, counter abstraction, count bound
+- Helper lemmas: `lemma_prefix_extend`, `lemma_push_to_set`, `lemma_to_set_finite`, `lemma_set_insert_new_len`, `lemma_set_insert_existing`
+
+**Key fix during attempt**: Discovered `axiom_set_insert_len` is in `vstd::set` (not `vstd::set_lib`) under the name `axiom_set_insert_len` (not `lemma_set_insert_len`).
+
+**Two remaining failures**:
+
+1. **Initial loop invariant** (line 153): `count as nat == voters@.subrange(0, 0).to_set().len()` — Verus can't automatically see that an empty subrange has `to_set().len() == 0`. Need explicit hints.
+
+2. **Case A bound** (line 254): `count as nat <= n as nat` after incrementing — requires proving `count_old < n`, which needs a pigeonhole/subset-size argument: `pref_old.to_set() ⊊ {0,...,n-1}` implies `|pref_old.to_set()| < n`.
+
+**Next attempt** will fix both with:
+1. Pre-loop hints for empty subrange to_set
+2. A `lemma_range_set_finite_len(n)` inductive lemma proving `|{k: NodeId | k < n}| = n`, plus subset monotonicity
