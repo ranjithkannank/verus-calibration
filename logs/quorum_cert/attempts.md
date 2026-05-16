@@ -58,3 +58,12 @@ verification results:: 9 verified, 1 errors
 ```
 The final return path of `verify_qc_structure` now verifies cleanly — all 4 helper lemmas + `verify_qc_structure` verified in this attempt.
 **Next idea:** Design steps 7–8 — prove `lemma_qc_has_honest_voter` by contradiction. Use `lemma_range_nodeid_len(n)` for the universe; show `voters(qc).subset_of(universe)` and `voters(qc).finite()`. Then under negation of the existential, prove `voters(qc).subset_of(byzantine)` (every honest voter is byzantine), call `vstd::set_lib::lemma_len_subset` to get `voters(qc).len() <= byzantine.len()`, then drive arithmetic contradiction from `has_quorum` + `byzantine.len() * 3 < n`.
+
+## Attempt 6 — 2026-05-16
+**Sub-task:** Design steps 7–8 — prove `lemma_qc_has_honest_voter` by contradiction.
+**Approach:** Constructed `universe = {k : (k as int) < n}`, called `lemma_range_nodeid_len(n)`, showed `voters(qc).subset_of(universe)` (witness via `choose` from the existential in `voters`), then `vstd::set_lib::lemma_len_subset` for finiteness. Negation branch: `if !(exists honest. voters(qc).contains(honest) && !byzantine.contains(honest)) { ... }` derives `voters(qc).subset_of(byzantine)` and applies `lemma_len_subset` again. Arithmetic contradiction proved via `vstd::arithmetic::div_mod::lemma_fundamental_div_mod` (which gives `twon == 3 * q + r`), combined with `r < 3` to get `byzantine_threshold(n) * 3 >= 2n + 1 > n`, contradicting `byzantine.len() * 3 < n` (multiplied through `byzantine.len() >= byzantine_threshold(n)`).
+**Verifier output:**
+```
+verification results:: 12 verified, 0 errors
+```
+**Next idea:** Done — hand off to reviewer.

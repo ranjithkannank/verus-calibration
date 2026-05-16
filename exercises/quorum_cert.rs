@@ -443,20 +443,77 @@ pub proof fn lemma_qc_has_honest_voter(qc: QuorumCert, n: u32, byzantine: Set<No
     ensures
         exists|honest: NodeId| voters(qc).contains(honest) && !byzantine.contains(honest),
 {
-    // TODO(loop): proof. The argument is pigeonhole on cardinality:
-    //   |voters(qc)| >= 2n/3 + 1   (by has_quorum)
-    //   |byzantine|  <= n/3 - 1    (by the strict inequality)
-    //   voters(qc) ⊆ {k : k < n}   (by all_voters_in_range)
-    // So voters(qc) and the non-Byzantine subset of {k : k < n} must
-    // intersect; pick any element of that intersection as `honest`.
-    //
-    // Useful vstd helpers:
-    //   vstd::set::axiom_set_insert_len
-    //   vstd::set_lib::lemma_len_subset
-    //   The pattern from quorum_count's lemma_range_nodeid_len is a
-    //   reasonable starting point for the size-of-{k : k < n} step.
-    //
-    // Do not modify any spec above.
+    // Construct universe = {k : (k as int) < n}, size n, finite.
+    let universe = Set::<NodeId>::new(|k: NodeId| (k as int) < n as int);
+    lemma_range_nodeid_len(n);
+    assert(universe.finite());
+    assert(universe.len() == n as nat);
+
+    // voters(qc) ⊆ universe (from all_voters_in_range).
+    assert(voters(qc).subset_of(universe)) by {
+        assert forall|h: NodeId| voters(qc).contains(h) implies universe.contains(h) by {
+            let i = choose|i: int|
+                0 <= i < qc.votes@.len() && qc.votes@[i].voter == h;
+            assert((qc.votes@[i].voter as int) < n as int);
+            assert(universe.contains(h));
+        };
+    };
+    vstd::set_lib::lemma_len_subset::<NodeId>(voters(qc), universe);
+    // Now voters(qc).finite() and voters(qc).len() <= n as nat.
+
+    // Contradiction: assume no honest voter exists.
+    if !(exists|honest: NodeId|
+            voters(qc).contains(honest) && !byzantine.contains(honest))
+    {
+        // Then voters(qc) ⊆ byzantine.
+        assert(voters(qc).subset_of(byzantine)) by {
+            assert forall|h: NodeId| voters(qc).contains(h) implies byzantine.contains(h) by {
+                // From the negated existential: for all h, if voters(qc).contains(h),
+                // then !(voters(qc).contains(h) && !byzantine.contains(h)),
+                // i.e., byzantine.contains(h).
+            };
+        };
+        vstd::set_lib::lemma_len_subset::<NodeId>(voters(qc), byzantine);
+        // voters(qc).len() <= byzantine.len().
+
+        // has_quorum: voters(qc).len() >= byzantine_threshold(n).
+        assert(voters(qc).len() >= byzantine_threshold(n));
+        assert(byzantine.len() >= byzantine_threshold(n));
+
+        // Multiplication by 3 monotonicity (nonlinear).
+        assert(byzantine_threshold(n) * 3 <= byzantine.len() * 3) by (nonlinear_arith)
+            requires byzantine.len() >= byzantine_threshold(n);
+        // From the precondition: byzantine.len() * 3 < n as nat.
+        assert(byzantine_threshold(n) * 3 < n as nat);
+
+        // But byzantine_threshold(n) * 3 = ((2n)/3 + 1) * 3 >= 2n + 1.
+        assert(byzantine_threshold(n) * 3 >= 2 * (n as nat) + 1) by {
+            let twon: int = 2 * (n as int);
+            let q: int = twon / 3;
+            let r: int = twon % 3;
+            // Fundamental div-mod identity from vstd: twon == 3 * q + r.
+            vstd::arithmetic::div_mod::lemma_fundamental_div_mod(twon, 3int);
+            assert(twon == 3 * q + r);
+            // 0 <= r < 3 from Verus' built-in mod bound axiom.
+            assert(0 <= r < 3);
+            // Bridge nat and int: byzantine_threshold(n) as int == q + 1.
+            assert(byzantine_threshold(n) as int == q + 1);
+            // (q + 1) * 3 == 3 * q + 3 == twon - r + 3 >= twon + 1 (since r <= 2).
+            assert((q + 1) * 3 == 3 * q + 3) by (nonlinear_arith);
+            assert(3 * q + 3 == twon - r + 3);
+            assert(twon - r + 3 >= twon + 1);
+            assert((q + 1) * 3 >= twon + 1);
+            assert(byzantine_threshold(n) * 3 == ((q + 1) * 3) as nat);
+            assert(byzantine_threshold(n) * 3 >= (twon + 1) as nat);
+            assert((twon + 1) as nat == 2 * (n as nat) + 1);
+        };
+
+        // 2n + 1 > n (since n > 0).
+        assert(2 * (n as nat) + 1 > n as nat);
+        assert(byzantine_threshold(n) * 3 > n as nat);
+        // Contradicts byzantine_threshold(n) * 3 < n as nat.
+        assert(false);
+    }
 }
 
 } // verus!
