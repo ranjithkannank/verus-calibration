@@ -91,11 +91,41 @@ while IFS= read -r f; do
 
   git rev-parse --verify --quiet "$tag" >/dev/null 2>&1 || continue
 
-  # Every line from the frozen version whose first non-whitespace token is
-  # `requires` or `ensures` must appear verbatim (whitespace and all) in the
-  # staged file. Using -Fx for exact-line match means cosmetic reformatting
-  # that touches these lines is also rejected — intentionally strict.
-  frozen=$(git show "$tag:$f" 2>/dev/null | grep -E '^[[:space:]]*(requires|ensures)([^a-zA-Z0-9_]|$)')
+  # Extract the FULL clause body for every `requires` and `ensures` block in
+  # the frozen file, not just the keyword line. Body lines are identified by
+  # indentation: any line whose indent strictly exceeds the keyword line's
+  # indent is treated as part of the clause. The clause ends at the next
+  # line with equal-or-less indent (which is either the function body `{`,
+  # the next clause keyword, or a `where` clause).
+  #
+  # This closes the keyword-prefix-only gap in the prior version of this
+  # check: previously, body lines like `        self.well_formed(),` could
+  # be silently rewritten into `        final(self).well_formed(),` and the
+  # hook would not notice.
+  frozen=$(git show "$tag:$f" 2>/dev/null | awk '
+    function indent_of(s,    i, n, c) {
+      n = length(s)
+      for (i = 1; i <= n; i++) {
+        c = substr(s, i, 1)
+        if (c != " " && c != "\t") return i - 1
+      }
+      return n
+    }
+    {
+      ind = indent_of($0)
+      first = $0; sub(/^[[:space:]]+/, "", first)
+      if (in_clause && ind > clause_indent) {
+        print
+        next
+      }
+      in_clause = 0
+      if (match(first, /^(requires|ensures)([^a-zA-Z0-9_]|$)/)) {
+        print
+        in_clause = 1
+        clause_indent = ind
+      }
+    }
+  ')
   [ -z "$frozen" ] && continue
 
   staged_content=$(git show ":$f" 2>/dev/null || cat "$f")
