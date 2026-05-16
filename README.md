@@ -31,12 +31,12 @@ systems cheaper to build for safety-critical applications. The first
 step on that path is a fourth exercise, `quorum_cert`, currently in
 progress.
 
-| Exercise         | Status      | Attempts to verify | Notes                                          |
-|------------------|-------------|--------------------|------------------------------------------------|
-| binary_search    | DONE        | 1                  | Clean first-try; architect's design predicted every invariant. |
-| bounded_log      | DONE        | 1 (post re-freeze) | Surfaced a Verus version mismatch in the operator-authored frozen spec; the reviewer's REJECT was the methodology working as intended. |
-| quorum_count     | DONE        | 2                  | Concrete-to-abstract proof bridge; implementer grepped local `vstd` and wrote a recursive cardinality lemma. |
-| quorum_cert      | in progress | —                  | First BFT-shaped exercise. Two obligations: structural verification of a quorum certificate, and the safety lemma that a valid QC contains an honest voter. |
+| Exercise         | Status | Attempts to verify | Notes                                          |
+|------------------|--------|--------------------|------------------------------------------------|
+| binary_search    | DONE   | 1                  | Clean first-try; architect's design predicted every invariant. |
+| bounded_log      | DONE   | 1 (post re-freeze) | Surfaced a Verus version mismatch in the operator-authored frozen spec; the reviewer's REJECT was the methodology working as intended. |
+| quorum_count     | DONE   | 2                  | Concrete-to-abstract proof bridge; implementer grepped local `vstd` and wrote a recursive cardinality lemma. |
+| quorum_cert      | DONE   | 6                  | First BFT-shaped exercise. Structural exec verification + safety lemma about honest voters. Six narrow iterations through the architect's sub-task list; surfaced the pigeonhole-via-contradiction pattern and `vstd::arithmetic::div_mod::lemma_fundamental_div_mod` for threshold arithmetic. |
 
 The full narrative lives in `writeup/blog-post.md` (publication-ready)
 and `writeup/writeup.md` (raw run record).
@@ -121,9 +121,11 @@ START ──► THINK ──► WORK ──► (verus passes) ──► REVIEW
 
 | Role        | Model              | Job                                                                                            |
 |-------------|--------------------|------------------------------------------------------------------------------------------------|
-| Architect   | claude-opus-4-7    | Reads frozen spec, writes a design note. No verifier output on first pass. Re-runs on escalation. |
-| Implementer | claude-sonnet-4-6  | One verus attempt per call: edit, run verus, log, commit. Stops at the iteration cap or on escalation. |
+| Architect   | claude-opus-4-7    | Reads frozen spec, writes a design note with an ordered sub-task list. No verifier output on first pass. Re-runs on escalation. |
+| Implementer | claude-opus-4-7    | One verus attempt per call, scoped to the smallest unfinished sub-task: edit, run verus, log, commit. Stops at the iteration cap or on escalation. |
 | Reviewer    | claude-opus-4-7    | After verus passes, audits the diff against `spec-frozen-<ex>`. APPROVE or REJECT. Does not check correctness — verus already did. |
+
+The implementer was originally `claude-sonnet-4-6` and handled the three calibration exercises (binary_search, bounded_log, quorum_count) competently. Switched to `claude-opus-4-7` for quorum_cert and the BFT-path exercises because the proof obligations need deeper reasoning. The bash script in `ralph/run-exercise.sh` holds the source of truth for model choices.
 
 The state is **inferred from the filesystem each iteration**: presence of
 `exercises/<ex>.design.md`, contents of `logs/<ex>/attempts.md` and
@@ -245,6 +247,16 @@ A formal verifier is the limit of that progression. It is a feedback
 signal the agent cannot satisfy except by either weakening the spec or
 actually being correct. The whole experiment is the empirical test of
 whether the first path can be ruled out by rules and tooling alone.
+
+## Methodology refinements since the original blog post
+
+The original post (linked above) captured the methodology as it stood after the three calibration exercises. The harness has since been refined based on lessons learned during the calibration and the first BFT-path exercise:
+
+- **Signal-aware orchestrator.** `fire_claude` now classifies non-zero claude exit codes by grepping the iteration log: rate-limit, budget cap, network blip, invocation error all surface as a distinct infrastructure-failure state. The orchestrator exits cleanly with an `infra_failure.md` marker rather than burning iterations against a transient problem. Tests in `ralph/test-classify-failure.sh`.
+- **Hook spec-preservation extended.** The pre-commit hook now extracts complete `requires` / `ensures` clause bodies via indentation tracking, not just the keyword lines. Closes the body-content blind spot the reviewer used to be the only layer catching. Tests in `scripts/test-hook-spec-preservation.sh`.
+- **Implementer scoped per iteration.** `prompt_work()` now directs the implementer to either pick the next unfinished sub-task from the design's order list, or to scope edits to the specific failing function from the latest verifier output. The orchestrator iterates; the implementer no longer tries to land everything in one attempt.
+- **Architect requires a Sub-tasks section.** Every design note ends with a numbered list of sub-tasks, ordered easiest to hardest, each small enough to land in one edit-verus-iterate cycle. The implementer reads this list and works through it in order. The existing "Suggested order of operations" header in older designs is accepted as equivalent.
+- **Architect playbook grew.** Six recurring proof patterns now live in `.claude/agents/architect.md`: `=~=` extensional equality, `choose` witnesses, `assert forall ... by` nudges, `decreases` clauses, frame-property defensive asserts, `final(self)` syntax, pigeonhole / cardinality bounds, pigeonhole-via-contradiction, `lemma_fundamental_div_mod` for threshold arithmetic.
 
 ## Related work and next steps
 
