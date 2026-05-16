@@ -214,6 +214,8 @@ fire_claude() {
   role_lc=$(echo "$role" | tr '[:upper:]' '[:lower:]')
   local iter_log="logs/${EXERCISE}/ralph/iter-${iteration}-${role_lc}.log"
   echo "  > log: $iter_log"
+  # The `--` is load-bearing: --allowedTools/--disallowedTools are variadic
+  # and will eat the prompt arg without it.
   claude -p \
     --agent "$agent" \
     --model "$model" \
@@ -222,11 +224,30 @@ fire_claude() {
     --max-budget-usd "$PER_CALL_BUDGET" \
     --allowedTools "${allowed[@]}" \
     --disallowedTools "${DISALLOWED_TOOLS[@]}" \
-    "$prompt" > "$iter_log" 2>&1
+    -- "$prompt" > "$iter_log" 2>&1
   local rc=$?
   echo "  > exit: $rc  (head of log:)"
   head -5 "$iter_log" | sed 's/^/      /'
-  return $rc
+  [ $rc -ne 0 ] && return $rc
+
+  # Auto-commit any agent-produced changes. The pre-commit hook runs here
+  # and is what makes spec weakening / cheat tokens load-bearing — if the
+  # hook rejects, we surface the rejection and return non-zero. The operator
+  # (or next iteration) can decide how to recover; we deliberately do NOT
+  # auto-clean the working tree, so the rejection state remains inspectable.
+  if [ -n "$(git status --porcelain)" ]; then
+    git add -A
+    local commit_msg="${role_lc}: ${EXERCISE} iter-${iteration}"
+    if git commit -m "$commit_msg" > "${iter_log}.commit" 2>&1; then
+      echo "  > committed: $(git log --oneline -1)"
+    else
+      echo "  > COMMIT REJECTED by pre-commit hook:"
+      sed 's/^/      /' "${iter_log}.commit"
+      echo "  > working tree left as-is; inspect and resolve before re-running"
+      return 1
+    fi
+  fi
+  return 0
 }
 
 # --- prompts ------------------------------------------------------------------
