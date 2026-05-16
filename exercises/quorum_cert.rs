@@ -117,8 +117,37 @@ pub fn verify_qc_structure(qc: &QuorumCert, n: u32) -> (result: bool)
     ensures
         result == (voters_distinct(*qc) && all_voters_in_range(*qc, n) && has_quorum(*qc, n)),
 {
-    // TODO(loop): fill in. Do not modify any spec above.
-    unimplemented!()
+    // Step-1 skeleton per design: bitmap, early returns, threshold compare.
+    // Minimal invariants only — enough for indexing to typecheck. The
+    // proof-carrying invariants (b)/(c)/(d) come in later attempts.
+    let mut seen: Vec<bool> = vec![false; n as usize];
+    let mut i: usize = 0;
+    while i < qc.votes.len()
+        invariant
+            i <= qc.votes@.len(),
+            seen@.len() == n as nat,
+            n > 0,
+        decreases qc.votes@.len() - i,
+    {
+        let v_id: NodeId = qc.votes[i].voter;
+        if v_id >= n {
+            // witness for !all_voters_in_range
+            return false;
+        }
+        let v: usize = v_id as usize;
+        if seen[v] {
+            // witness for !voters_distinct
+            return false;
+        }
+        seen.set(v, true);
+        i = i + 1;
+    }
+    // |voters(qc)| == qc.votes.len() under distinct + in-range (helper lemma in
+    // later attempt). For now just emit the comparison — verification will
+    // fail on the postcondition's has_quorum part; that's expected for step 1.
+    let votes_len: u64 = qc.votes.len() as u64;
+    let threshold: u64 = 2u64 * (n as u64) / 3u64 + 1u64;
+    votes_len >= threshold
 }
 
 // --- Obligation 2: safety lemma ---------------------------------------------
