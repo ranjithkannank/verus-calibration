@@ -19,7 +19,11 @@ split → integration contracts → **vericoding as proof-grade feedback**).
 ## Status
 
 All three exercises landed `DONE` (verus passed + reviewer
-`APPROVE`). Calibration is complete; the writeup is drafted.
+`APPROVE`). Calibration is complete; the writeup is published.
+
+**Blog post:** [Wiring a Formal Verifier into an Autonomous Coding
+Loop](https://ranjithkannan.com/2026/05/10/verus-calibration-formal-verifier-loop/)
+on ranjithkannan.com.
 
 | Exercise         | Status | Attempts to verify | Notes                                          |
 |------------------|--------|--------------------|------------------------------------------------|
