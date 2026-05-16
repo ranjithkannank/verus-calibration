@@ -1,0 +1,11 @@
+Clean tree (only an untracked ralph log file from the orchestrator). 
+
+**Summary:**
+
+- **Attempt 1: SUCCESS** — Verus exited 0, `4 verified, 0 errors`.
+
+The implementation follows the design exactly:
+1. **`new`**: Returns `Log { cap: capacity, msgs: Vec::new() }` — vstd axioms for `Vec::new()` close all three postconditions trivially.
+2. **`len`**: Returns `self.msgs.len()` — direct cast lines up with `view().len()`.
+3. **`get`**: Bounds-checks `index < self.msgs.len()` and returns `Some(self.msgs[index])` or `None`.
+4. **`append`**: Checks `self.msgs.len() < self.cap`, pushes, then nudges the SMT solver with two asserts: (a) `self.msgs@ == old(self).msgs@.push(msg)` and (b) the frame forall over all prior indices. This reliably fires the `Seq::push` index axiom.
