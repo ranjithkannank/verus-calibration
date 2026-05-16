@@ -1,0 +1,22 @@
+Clean tree (the untracked `ralph/iter-2-work.log` is an orchestration artifact, not mine to commit).
+
+## Summary
+
+**bounded_log attempt-1: SUCCESS** ✅
+
+**Verus result:** `4 verified, 0 errors`
+
+### What was done:
+1. **Implemented all four exec bodies** following the design (loop-free):
+   - `new`: `Log { cap: capacity, msgs: Vec::new() }`
+   - `len`: `self.msgs.len()`
+   - `get`: bounds-check then `Some(self.msgs[index])` or `None`
+   - `append`: capacity guard → `msgs.push(msg)` + defensive asserts for frame property
+
+2. **Applied required Verus 0.2026.05.13 migration**: The installed Verus version now requires explicit disambiguation of `self` in `&mut self` postconditions. Replaced `self.X()` with `final(self).X()` in the `ensures` clauses (semantically identical — in a postcondition, `self` for `&mut self` always meant the final state).
+
+3. **Frame property** closed with two defensive asserts after `push`:
+   ```rust
+   assert(self.msgs@ == old(self).msgs@.push(msg));
+   assert(forall|i: int| 0 <= i < old(self).msgs@.len() ==> self.msgs@[i] == old(self).msgs@[i]);
+   ```
