@@ -75,8 +75,11 @@ MODEL_IMPLEMENTER="claude-sonnet-4-6"
 MODEL_REVIEWER="claude-opus-4-7"
 
 # Per-call dollar safety net. No-op for subscription users; takes effect if
-# the install ever falls back to API metering.
-PER_CALL_BUDGET=2.00
+# the install ever falls back to API metering. Set high enough that complex
+# Verus proofs (quorum_count's distinct-count gymnastics in particular) can
+# complete without being cut off mid-call — the original $2 was too tight
+# and chopped quorum_count attempts at ~328 lines of partially-written proof.
+PER_CALL_BUDGET=20.00
 
 # --- preflight ----------------------------------------------------------------
 
