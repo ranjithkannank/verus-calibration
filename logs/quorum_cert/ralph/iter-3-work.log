@@ -1,0 +1,8 @@
+Attempt 3 complete. Summary:
+
+- **Sub-task tackled:** Design step 3 — added invariant (d), the bitmap-vs-prefix existential abstraction, plus its initial-state asserts and the fall-through re-establishment block.
+- **Result:** 3 errors → 2 errors. The duplicate-voter early-return path verified as a bonus, because (d) instantiated at `m = v_id as int` directly witnesses `!voters_distinct`.
+- **Remaining failures:**
+  - Line 201: final `votes_len >= threshold` (still needs invariant (c) distinct prefix and the threshold bridging lemma — steps 4 & 6).
+  - Line 224: `lemma_qc_has_honest_voter` body (step 7 & 8).
+- **Status:** `verus_failed`, working tree clean. Orchestrator can invoke attempt 4 to tackle step 4 (invariant (c) pairwise distinctness).
