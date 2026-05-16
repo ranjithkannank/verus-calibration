@@ -48,6 +48,7 @@ ESCALATION="${LOGDIR}/escalation.md"
 REVIEW="${LOGDIR}/review.md"
 BLOCKED="${LOGDIR}/blocked.md"
 DONE_FLAG="${LOGDIR}/done.flag"
+INFRA_FAILURE="${LOGDIR}/infra_failure.md"
 SPEC_TAG="spec-frozen-${EXERCISE}"
 
 # Per-exercise iteration caps (matches AGENTS.md).
@@ -195,6 +196,55 @@ DISALLOWED_TOOLS=(
   "Bash(sudo*)" "Bash(su *)"
 )
 
+# Classify a failed claude call by inspecting its iteration log. Echoes one
+# of: rate_limit | budget | network | invocation | unknown.
+#
+# This is what makes the orchestrator signal-aware: instead of treating every
+# non-zero exit code as "verus failed, iterate," we recognise infrastructure
+# signatures and surface them as a distinct failure mode so the loop can stop
+# rather than burn iterations against a transient problem.
+classify_failure() {
+  local log="$1"
+  [ -f "$log" ] || { echo unknown; return; }
+  if grep -qiE "hit your limit|resets at [0-9]|five_hour|rate.limit|rate_limit_event" "$log"; then
+    echo rate_limit
+  elif grep -qiE "Exceeded USD budget|max-budget-usd" "$log"; then
+    echo budget
+  elif grep -qiE "ECONNREFUSED|getaddrinfo|connect ETIMEDOUT|network unreachable|EHOSTUNREACH" "$log"; then
+    echo network
+  elif grep -qiE "Input must be provided|unrecognized option|unknown flag" "$log"; then
+    echo invocation
+  else
+    echo unknown
+  fi
+}
+
+# Write the infrastructure-failure marker. Records what happened, names the
+# iteration log so the operator can read the raw evidence, and exits the loop
+# cleanly. The marker is informational; classify_state does not treat it as a
+# stop condition, so re-running the script (after the underlying issue is
+# resolved) resumes naturally.
+write_infra_failure() {
+  local kind="$1" iter_log="$2" rc="$3"
+  cat > "$INFRA_FAILURE" <<EOF
+# Infrastructure failure: $kind
+
+Iteration $iteration of ${EXERCISE} hit an infrastructure-class failure
+rather than a verification failure. The agent did not get to run.
+
+- Failure kind: \`$kind\`
+- Exit code from claude: $rc
+- Iteration log: \`$iter_log\`
+- Detected at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+The orchestrator stopped to avoid burning iterations against a transient
+problem. To resume after the underlying issue clears (rate-limit reset,
+plan upgrade, network restored), simply re-run
+\`./ralph/run-exercise.sh ${EXERCISE}\` — state is on disk; the loop
+picks up at the next state.
+EOF
+}
+
 # Fire a single claude -p call with role-scoped permissions.
 # Args:
 #   $1 = role label (for logging)
@@ -202,6 +252,13 @@ DISALLOWED_TOOLS=(
 #   $3 = agent name (must match a file in .claude/agents/)
 #   $4 = task prompt (string)
 #   $5 = allowed-tools array name (ALLOWED_ARCHITECT | ALLOWED_IMPLEMENTER | ALLOWED_REVIEWER)
+#
+# Return codes:
+#   0  call succeeded; any agent-produced changes were committed
+#   1  call failed for a content reason (verus rejection, agent error)
+#      — caller should iterate
+#   2  call failed for an infrastructure reason (rate limit, budget, etc.)
+#      — caller should stop; INFRA_FAILURE was written
 fire_claude() {
   local role="$1" model="$2" agent="$3" prompt="$4" allowed_var="$5"
   echo
@@ -229,7 +286,22 @@ fire_claude() {
   local rc=$?
   echo "  > exit: $rc  (head of log:)"
   head -5 "$iter_log" | sed 's/^/      /'
-  [ $rc -ne 0 ] && return $rc
+
+  if [ $rc -ne 0 ]; then
+    local kind
+    kind=$(classify_failure "$iter_log")
+    case "$kind" in
+      rate_limit|budget|network|invocation)
+        echo "  > INFRA FAILURE: $kind (see $INFRA_FAILURE)"
+        write_infra_failure "$kind" "$iter_log" "$rc"
+        return 2
+        ;;
+      unknown|*)
+        echo "  > failure kind: unknown (treating as content failure; will iterate)"
+        return 1
+        ;;
+    esac
+  fi
 
   # Auto-commit any agent-produced changes. The pre-commit hook runs here
   # and is what makes spec weakening / cheat tokens load-bearing — if the
@@ -418,22 +490,27 @@ while [ $iteration -lt $MAX_OUTER_ITERATIONS ]; do
 
     THINK)
       fire_claude THINK "$MODEL_ARCHITECT" architect "$(prompt_think)" ALLOWED_ARCHITECT
+      [ $? -eq 2 ] && exit 2
       ;;
 
     THINK_REVISE)
       fire_claude THINK_REVISE "$MODEL_ARCHITECT" architect "$(prompt_think_revise)" ALLOWED_ARCHITECT
+      [ $? -eq 2 ] && exit 2
       ;;
 
     WORK)
       fire_claude WORK "$MODEL_IMPLEMENTER" implementer "$(prompt_work)" ALLOWED_IMPLEMENTER
+      [ $? -eq 2 ] && exit 2
       ;;
 
     WORK_AFTER_REJECT)
       fire_claude WORK_AFTER_REJECT "$MODEL_IMPLEMENTER" implementer "$(prompt_work_after_reject)" ALLOWED_IMPLEMENTER
+      [ $? -eq 2 ] && exit 2
       ;;
 
     REVIEW)
       fire_claude REVIEW "$MODEL_REVIEWER" reviewer "$(prompt_review)" ALLOWED_REVIEWER
+      [ $? -eq 2 ] && exit 2
       # Status is consumed once the reviewer has run.
       rm -f "$STATUS"
       ;;
