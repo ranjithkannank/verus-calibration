@@ -11,6 +11,7 @@ EXERCISES=(
   exercises/quorum_cert.rs
   exercises/ft_midpoint.rs
   exercises/marzullo.rs
+  exercises/cross_module_counter.rs
 )
 
 fail=0

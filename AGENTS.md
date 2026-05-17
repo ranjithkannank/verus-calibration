@@ -81,6 +81,7 @@ Work in this order. Do not start the next exercise until the previous one is eit
 4. `exercises/quorum_cert.rs` — first step on the BFT-for-aerospace path. Two obligations: an exec structural check, and a proof-only safety lemma about honest voters.
 5. `exercises/ft_midpoint.rs` — first sensor-fusion exercise. Verified Schmid-Schossmaier fault-tolerant midpoint over `n >= 2f+1` readings with at most `f` Byzantine. One obligation: an exec function whose result is bracketed by correct sensor readings on each side. Single-round, single-value variant.
 6. `exercises/marzullo.rs` — interval variant of the sensor-fusion track. Verified Marzullo's algorithm: given `n >= 2f+1` sensor intervals with at most `f` Byzantine, return an interval whose interior contains a point supported by at least `n - f` input intervals. Same trust boundary as ft_midpoint; reuses the inclusion-exclusion pigeonhole pattern from there.
+7. `exercises/cross_module_counter.rs` — first multi-module exercise. A `counter` module exports a bounded counter with `closed spec fn` value/bound/invariant; a `client` module uses it via the public API only. Stresses module-level visibility, `closed spec fn` opacity, and cross-module loop invariants. Single file, nested `mod` blocks inside one `verus!{}`.
 
 ## Multi-agent workflow (brief)
 
