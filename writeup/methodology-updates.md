@@ -108,6 +108,31 @@ shape as the existing three:
 > scoping concrete: "scope to the smallest unfinished sub-task"
 > means something specific because the architect listed them.
 
+> **Pre-spec verification via operator-authored witness files.**
+> Before tagging `spec-frozen-<name>`, the operator writes a
+> reference implementation in `exercises/<name>_witness.rs` carrying
+> the same spec block as the exercise file, then runs
+> `ralph/check-spec.sh <name>`. If the witness verifies under Verus
+> with no cheat tokens, the spec admits a model and the freeze is
+> safe. If verus rejects it, the spec is unprovable or the witness
+> is wrong, and the operator fixes one before the agent loop ever
+> starts. Two of the calibration exercises required the operator to
+> re-freeze the spec mid-run. `bounded_log` because the original
+> syntax stopped compiling under a newer Verus release;
+> `marzullo` because the original spec omitted a precondition (the
+> Helly-1D condition that all correct sensors' intervals share at
+> least one common point) that the agent took several attempts to
+> surface via constructive counterexample. Both held the
+> methodology — the agent refused to weaken specs and wrote
+> blocked reports cleanly — but both also burned agent cycles on
+> bugs that were ultimately in operator-authored input. The
+> witness check catches that class at operator time. The empirical
+> negative test in
+> [`scripts/test-witness-catches-bad-spec.sh`](https://github.com/ranjithkannank/verus-calibration/blob/main/scripts/test-witness-catches-bad-spec.sh)
+> strips the Helly-1D precondition from a copy of the marzullo
+> witness and confirms verus rejects it. One operator-time Verus
+> run would have replaced those agent attempts.
+
 ### What the loop got wrong (section 6 / limitations)
 
 Two items in the existing post should be marked as fixed:
@@ -216,5 +241,7 @@ public commit:
 - `quorum_cert` scaffolded: `4c2b880`
 - `MODEL_IMPLEMENTER` switched to Opus, prompt scoping, architect Sub-tasks requirement: `bda7dbd`
 - `quorum_cert` DONE: `5a2a87d`
+- Pre-spec verification tooling (`ralph/check-spec.sh`, marzullo
+  witness, empirical negative test): `17a4fdd`
 
 All on `main` at <https://github.com/ranjithkannank/verus-calibration>.
