@@ -1,0 +1,8 @@
+Review complete. Conclusion: **APPROVE**.
+
+Summary of the audit:
+- The diff against `spec-frozen-ft_midpoint` leaves every frozen item (`correct_at`, `correct_indices`, `some_correct_le`, `some_correct_ge`, and `ft_midpoint`'s `requires`/`ensures`) byte-identical.
+- No bypass tokens (`assume(`, `external_body`, `unimplemented!()`, `unreachable!()`, `panic!(`) appear in code; the only "unreachable" hit is in a comment.
+- New `spec fn` helpers (`le_set`, `ge_set`, `le_set_upto`, `ge_set_upto`) and a battery of `proof fn` lemmas are clean additions below the frozen block; none modify the existing spec.
+- The post-loop `readings[0]` return is gated by a real proof of unreachability (`lemma_exists_midpoint` vs. the strengthened invariant + `assert(false)`), not a stub.
+- Review committed as `56bac50`.
