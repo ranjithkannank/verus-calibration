@@ -187,6 +187,28 @@ fn count_containing(intervals: &Vec<Interval>, p: Reading) -> (c: u32)
     c
 }
 
+// --- Existence lemma (load-bearing; sub-task 10 stub) -----------------------
+//
+// Claims that some input-`lo` endpoint is contained in at least n - f
+// intervals. The natural proof is argmax-over-correct-indices + Helly-1D,
+// but the frozen spec lacks the Helly precondition; see design.md
+// "Critical caveat". Sub-task 10 just stubs the lemma so we can see the
+// proof shape and confirm the postcondition is the only remaining failure
+// in `marzullo`.
+
+proof fn lemma_exists_supported_endpoint(intervals: Seq<Interval>, f: nat)
+    requires
+        intervals.len() >= 2 * f + 1,
+        well_formed(intervals),
+        correct_indices(intervals.len()).len() >= intervals.len() - f,
+    ensures
+        exists|j: int|
+            0 <= j < intervals.len()
+            && intervals_containing(intervals, #[trigger] intervals[j].lo).len()
+               >= intervals.len() - f,
+{
+}
+
 // --- The exec entry point ---------------------------------------------------
 //
 // Returns an interval whose interior contains a point supported by at

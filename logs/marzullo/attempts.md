@@ -75,3 +75,25 @@ error: postcondition not satisfied
 ```
 
 **Next idea:** Sub-task 10 — add a `lemma_exists_supported_endpoint` stub (empty body) and confirm Verus reports its `exists` postcondition as the only remaining failure. If sub-task 11's argmax-over-correct-indices proof can't close the Helly step in 3 attempts, escalate per the design's prediction.
+
+## Attempt 4 — 2026-05-16
+**Sub-tasks worked on:** 10 (stub `lemma_exists_supported_endpoint` with empty body).
+
+**Approach:** Added a `proof fn lemma_exists_supported_endpoint(intervals: Seq<Interval>, f: nat)` with the design's signature (requires `intervals.len() >= 2*f+1`, `well_formed`, and `correct_indices(n).len() >= n - f`; ensures `exists|j| 0 <= j < n && intervals_containing(intervals, intervals[j].lo).len() >= n - f`), `#[trigger]` placed on `intervals[j].lo` to match the main loop's invariant trigger. Body is empty as prescribed — the lemma's own existence postcondition is expected to fail until sub-task 11 attempts the real proof.
+
+**Verifier output:** EXIT=1. **7 verified, 2 errors** (was 7 verified, 1 errors — same 7 verifications, plus the new lemma stub adds its expected unproven `exists` postcondition). Two failures, both expected:
+```
+error: postcondition not satisfied
+   --> .../marzullo.rs:205:9
+205 | /         exists|j: int|
+206 | |             0 <= j < intervals.len()
+207 | |             && intervals_containing(intervals, #[trigger] intervals[j].lo).len()
+208 | |                >= intervals.len() - f,
+    | |_____________________________________^ failed this postcondition
+
+error: postcondition not satisfied
+   --> .../marzullo.rs:243:9
+... (same marzullo postcondition as before)
+```
+
+**Next idea:** Sub-task 11 — attempt the proof of `lemma_exists_supported_endpoint` via argmax-over-correct-indices + Helly-1D. The design predicts this will block on the Helly step (the spec lacks the `correct_at(i) && correct_at(j) ==> intervals[i].lo <= intervals[j].hi` precondition). Try the natural shape first; if three consecutive attempts on the Helly obligation fail, write `escalation.md` per the design.
