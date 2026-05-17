@@ -84,6 +84,7 @@ case "$EXERCISE" in
   marzullo)      ATTEMPT_CAP=20 ;;
   cross_module_counter) ATTEMPT_CAP=15 ;;
   counter_multifile) ATTEMPT_CAP=10 ;;
+  counter_producer) ATTEMPT_CAP=12 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 
