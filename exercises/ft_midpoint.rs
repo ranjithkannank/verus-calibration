@@ -453,6 +453,128 @@ proof fn lemma_min_reading_in_set(s: Set<int>, readings: Seq<Reading>) -> (jm: i
     }
 }
 
+// --- L6: existence of a midpoint candidate ---------------------------------
+//
+// For any sequence of `n >= 2f + 1` readings, there exists an index j such
+// that at least f+1 readings are <= readings[j] and at least f+1 readings
+// are >= readings[j]. Proof by contradiction: build Lo (j's whose le_set is
+// too small) and Hi (j's whose ge_set is too small). The contradiction
+// hypothesis makes Lo ∪ Hi == [0, n). Inclusion-exclusion gives
+// |Lo| + |Hi| >= n >= 2f + 1, so at least one of them has size >= f + 1.
+// Argmax on Lo (or argmin on Hi) extracts a witness whose le_set (resp.
+// ge_set) is forced to be both <= f and >= f + 1: contradiction.
+
+proof fn lemma_exists_midpoint(readings: Seq<Reading>, f: nat)
+    requires readings.len() >= 2 * f + 1,
+    ensures exists|j: int|
+        0 <= j < readings.len()
+        && le_set(readings, readings[j]).len() >= f + 1
+        && ge_set(readings, readings[j]).len() >= f + 1,
+{
+    let n: int = readings.len() as int;
+
+    if !(exists|j: int|
+        0 <= j < readings.len()
+        && le_set(readings, readings[j]).len() >= f + 1
+        && ge_set(readings, readings[j]).len() >= f + 1)
+    {
+        let lo: Set<int> = Set::new(
+            |j: int| 0 <= j < n && le_set(readings, readings[j]).len() <= f,
+        );
+        let hi: Set<int> = Set::new(
+            |j: int| 0 <= j < n && ge_set(readings, readings[j]).len() <= f,
+        );
+
+        lemma_int_range(0, n);
+        let u: Set<int> = set_int_range(0, n);
+        assert(u.finite());
+        assert(u.len() == n as nat);
+
+        // lo, hi ⊆ u, hence finite and len <= n.
+        assert(lo.subset_of(u)) by {
+            assert forall|x: int| lo.contains(x) implies u.contains(x) by {}
+        }
+        lemma_len_subset(lo, u);
+
+        assert(hi.subset_of(u)) by {
+            assert forall|x: int| hi.contains(x) implies u.contains(x) by {}
+        }
+        lemma_len_subset(hi, u);
+
+        // Under the contradiction hypothesis, every x in u is in lo or hi.
+        assert((lo + hi) =~= u) by {
+            assert forall|x: int| u.contains(x) implies (lo + hi).contains(x) by {
+                // x in u ⇒ 0 <= x < n = readings.len()
+                // From the negated existential at j = x:
+                //   ¬(le_set(_, readings[x]).len() >= f + 1
+                //     ∧ ge_set(_, readings[x]).len() >= f + 1)
+                // ⇒ le_set(_, readings[x]).len() <= f
+                //   ∨ ge_set(_, readings[x]).len() <= f
+                assert(0 <= x < readings.len());
+                assert(!(0 <= x < readings.len()
+                    && le_set(readings, readings[x]).len() >= f + 1
+                    && ge_set(readings, readings[x]).len() >= f + 1));
+                if le_set(readings, readings[x]).len() <= f {
+                    assert(lo.contains(x));
+                } else {
+                    assert(ge_set(readings, readings[x]).len() <= f);
+                    assert(hi.contains(x));
+                }
+            }
+            assert forall|x: int| (lo + hi).contains(x) implies u.contains(x) by {}
+        }
+
+        assert((lo + hi).len() == n as nat);
+
+        // Inclusion-exclusion: |lo ∪ hi| + |lo ∩ hi| == |lo| + |hi|.
+        lemma_set_intersect_union_lens(lo, hi);
+        assert(lo.len() + hi.len() >= n as nat);
+
+        if lo.len() >= f + 1 {
+            // Argmax over lo.
+            assert forall|j: int| lo.contains(j) implies 0 <= j < readings.len() by {}
+            let jm = lemma_max_reading_in_set(lo, readings);
+            // lo.contains(jm) ⇒ le_set(_, readings[jm]).len() <= f
+            assert(lo.contains(jm));
+            assert(le_set(readings, readings[jm]).len() <= f);
+
+            // Every j in lo has readings[j] <= readings[jm], so j ∈ le_set.
+            lemma_le_set_in_range(readings, readings[jm]);
+            assert(lo.subset_of(le_set(readings, readings[jm]))) by {
+                assert forall|j: int| lo.contains(j)
+                    implies le_set(readings, readings[jm]).contains(j) by {
+                    // j in lo: 0 <= j < n
+                    // argmax property: readings[j] <= readings[jm]
+                }
+            }
+            lemma_len_subset(lo, le_set(readings, readings[jm]));
+            // Now |le_set(_, readings[jm])| >= |lo| >= f + 1.
+            assert(le_set(readings, readings[jm]).len() >= f + 1);
+            assert(false);
+        } else {
+            // lo.len() <= f, lo.len() + hi.len() >= 2f + 1 ⇒ hi.len() >= f + 1.
+            assert(hi.len() >= f + 1);
+
+            assert forall|j: int| hi.contains(j) implies 0 <= j < readings.len() by {}
+            let jm = lemma_min_reading_in_set(hi, readings);
+            assert(hi.contains(jm));
+            assert(ge_set(readings, readings[jm]).len() <= f);
+
+            lemma_ge_set_in_range(readings, readings[jm]);
+            assert(hi.subset_of(ge_set(readings, readings[jm]))) by {
+                assert forall|j: int| hi.contains(j)
+                    implies ge_set(readings, readings[jm]).contains(j) by {
+                    // j in hi: 0 <= j < n
+                    // argmin property: readings[j] >= readings[jm]
+                }
+            }
+            lemma_len_subset(hi, ge_set(readings, readings[jm]));
+            assert(ge_set(readings, readings[jm]).len() >= f + 1);
+            assert(false);
+        }
+    }
+}
+
 // --- The exec entry point ---------------------------------------------------
 //
 // Returns a value bracketed by some correct reading on each side.

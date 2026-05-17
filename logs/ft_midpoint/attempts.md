@@ -205,3 +205,64 @@ to extract a witness index `jm` with `le_set(_, readings[jm]).len() >=
 f + 1` and `ge_set(_, readings[jm]).len() >= f + 1`. Wire L6 into
 the post-loop block via a `choose` witness + `assert(false)` in a
 subsequent attempt.
+
+## Attempt 6 — 2026-05-16
+**Sub-tasks worked on:** 13 (L6 existence — `lemma_exists_midpoint`). Sub-task 14
+(wiring into the post-loop, plus loop invariant strengthening) is deferred to
+the next attempt. The post-loop `readings[0]` placeholder remains untouched.
+
+**Approach:**
+- Added `lemma_exists_midpoint(readings, f)` between the argmin lemma and the
+  `ft_midpoint` comment block. Proof by contradiction:
+  1. `if !(exists|j: int| 0 <= j < n && le_set_len >= f + 1 && ge_set_len >= f + 1) { ... assert(false); }`
+  2. Build `lo := { j ∈ [0, n) : le_set(_, readings[j]).len() <= f }` and
+     `hi := { j ∈ [0, n) : ge_set(_, readings[j]).len() <= f }`. Both subset
+     of `u := set_int_range(0, n)`, so finite with `len <= n` via
+     `lemma_len_subset`.
+  3. Under the negated existential, `(lo + hi) =~= u`: for any `x ∈ u`,
+     instantiate the negated existential at `j = x` (explicit
+     `assert(!(...))` inside the assert forall block to force trigger
+     match on `le_set(readings, readings[x])`), then case-split on which
+     count is `<= f`.
+  4. `(lo + hi).len() == n` (from extensional equality); then
+     `lemma_set_intersect_union_lens(lo, hi)` gives
+     `lo.len() + hi.len() >= n >= 2*f + 1`.
+  5. Case `lo.len() >= f + 1`: call `lemma_max_reading_in_set(lo, readings)`
+     to get `jm ∈ lo` with `readings[j] <= readings[jm]` for all `j ∈ lo`.
+     Show `lo ⊆ le_set(_, readings[jm])` and apply `lemma_len_subset` to
+     get `|le_set(_, readings[jm])| >= |lo| >= f + 1`. But `jm ∈ lo`
+     gives `|le_set(_, readings[jm])| <= f`: contradiction.
+  6. Case else: `hi.len() >= f + 1` (linear-arith from `lo.len() + hi.len() >= 2f + 1`,
+     `lo.len() <= f`). Symmetric via `lemma_min_reading_in_set`.
+
+**Verifier output:**
+```
+verification results:: 17 verified, 1 errors
+error: postcondition not satisfied
+   --> ft_midpoint.rs:603:9
+603 |         some_correct_le(readings@, result),
+        failed this postcondition
+... readings[0] at end of function body
+error: postcondition not satisfied
+   --> ft_midpoint.rs:604:9
+604 |         some_correct_ge(readings@, result),
+        failed this postcondition
+... readings[0] at end of function body
+```
+17 verified (= attempt 5's 16 + new `lemma_exists_midpoint`). The
+contradiction-style proof of L6 closed cleanly — both the `(lo+hi) =~= u`
+extensional set equality, the inclusion-exclusion arithmetic, and both
+argmax/argmin cases discharged on the first try. Only the unchanged
+post-loop placeholder still fails, identical to the previous attempt.
+
+**Next idea:** Sub-task 14: wire L6 into the post-loop. Two pieces are
+required: (a) strengthen the main `while` invariant with a "no earlier
+index satisfied both thresholds" forall:
+```
+forall|j2: int| 0 <= j2 < j as int ==>
+    le_set(readings@, readings@[j2]).len() < f as nat + 1
+    || ge_set(readings@, readings@[j2]).len() < f as nat + 1
+```
+and (b) in the post-loop block, call `lemma_exists_midpoint(readings@, f as nat)`,
+`choose` the witness `jw`, derive a contradiction with the invariant at `j2 = jw`,
+then replace `readings[0]` with `unreachable!()` discharged by `assert(false)`.
