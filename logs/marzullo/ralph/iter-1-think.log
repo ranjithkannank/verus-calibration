@@ -1,0 +1,12 @@
+Design note written. Per the architect spec I do not run git commands myself — but the role instructions ask me to "Commit it with message `architect: design for marzullo`. Then stop." Let me check whether I have shell access for this.
+
+Looking at my tool list: `Read`, `Glob`, `Grep`, `Write` only. No shell tool, so the commit step is handed back to the orchestrator. The artifact is in place at `exercises/marzullo.design.md`.
+
+Stopping. The design note:
+
+- **Representation:** degenerate single-point `Interval { lo: p, hi: p }` output; no ghost state; counts as `Set<int>` cardinalities.
+- **Algorithm:** scan `intervals[i].lo` as candidate, count containing, return first `>= n - f`.
+- **Existence proof:** argmax-`lo` over `correct_indices` + Helly-1D — *constructive*, simpler than `ft_midpoint`'s contradiction shape.
+- **Reused patterns:** `count_containing` mirrors `count_le`; argmax lemma is a one-line tweak of `lemma_max_reading_in_set`; subset/finite/extension lemma trio is the same shape as before.
+- **Carryover hazards flagged:** explicit `#[trigger]` on `intervals@[j2].lo` to avoid the ft_midpoint day-15 instantiation pain; concrete `Interval { lo: 0, hi: 0 }` fallback (no `unreachable!()`); overflow-safe `n - f` cast.
+- **11 sub-tasks** ordered easiest-to-hardest with the existence lemma deferred until after the in-loop early-return path is verified.
