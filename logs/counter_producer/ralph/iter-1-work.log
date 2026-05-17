@@ -1,0 +1,11 @@
+Done. Summary:
+
+- **Exercise:** `counter_producer` (multi-file: `counter.rs`, `producer.rs`, `main.rs`)
+- **Attempt:** 1 of 12
+- **Result:** `verus_passed` — `verification results:: 6 verified, 0 errors`
+- **Approach:** Executed all three sub-tasks in a single attempt per the design's prediction:
+  - `counter.rs` — direct port from `counter_multifile/counter.rs`
+  - `producer.rs` — `let start = c.get();` snapshot + six-conjunct loop invariant (incl. the load-bearing `start + n <= c.bound()`) threading the precondition through each iteration
+  - `main.rs` — three-call pipeline (`new` → `produce` → `get`)
+- **Pattern logged** to `AGENTS.md` under `### counter_producer (attempt 1, success)` — snapshot pattern, cross-module composition, `crate::counter::Counter` import path.
+- **Working tree:** clean. Ready for reviewer.

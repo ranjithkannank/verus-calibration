@@ -9,3 +9,9 @@
 
   > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
   > log: logs/counter_producer/ralph/iter-1-work.log
+  > exit: 0  (head of log:)
+      Done. Summary:
+      
+      - **Exercise:** `counter_producer` (multi-file: `counter.rs`, `producer.rs`, `main.rs`)
+      - **Attempt:** 1 of 12
+      - **Result:** `verus_passed` — `verification results:: 6 verified, 0 errors`
