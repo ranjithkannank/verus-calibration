@@ -1,0 +1,155 @@
+note: automatically chose triggers for this expression:
+  --> exercises/marzullo.rs:78:5
+   |
+78 |     forall|i: int| 0 <= i < intervals.len() ==> intervals[i].lo <= intervals[i].hi
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+  --> exercises/marzullo.rs:78:49
+   |
+78 |     forall|i: int| 0 <= i < intervals.len() ==> intervals[i].lo <= intervals[i].hi
+   |                                                 ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/marzullo.rs:99:5
+    |
+ 99 | /     forall|i: int, j: int|
+100 | |         0 <= i < intervals.len() && 0 <= j < intervals.len()
+101 | |         && correct_at(i) && correct_at(j)
+102 | |             ==> intervals[i].lo <= intervals[j].hi
+    | |__________________________________________________^
+
+note:   trigger 1 of 1:
+   --> exercises/marzullo.rs:101:12
+    |
+101 |         && correct_at(i) && correct_at(j)
+    |            ^^^^^^^^^^^^^    ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/marzullo.rs:216:9
+    |
+216 |         forall|j: int| s.contains(j) ==> intervals[j].lo <= intervals[jm].lo,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/marzullo.rs:216:24
+    |
+216 |         forall|j: int| s.contains(j) ==> intervals[j].lo <= intervals[jm].lo,
+    |                        ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/marzullo.rs:227:9
+    |
+227 |         assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/marzullo.rs:227:31
+    |
+227 |         assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |                               ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/marzullo.rs:238:13
+    |
+238 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/marzullo.rs:238:35
+    |
+238 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |                                   ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/marzullo.rs:245:13
+    |
+245 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[jm2].lo by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/marzullo.rs:245:35
+    |
+245 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[jm2].lo by {
+    |                                   ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/marzullo.rs:264:9
+    |
+264 | /         exists|j: int|
+265 | |             0 <= j < intervals.len()
+266 | |             && intervals_containing(intervals, intervals[j].lo).len()
+267 | |                 >= intervals.len() - f,
+    | |______________________________________^
+
+note:   trigger 1 of 1:
+   --> exercises/marzullo.rs:266:48
+    |
+266 |             && intervals_containing(intervals, intervals[j].lo).len()
+    |                                                ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/marzullo.rs:286:9
+    |
+286 |         assert forall|k: int| s.contains(k)
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/marzullo.rs:286:31
+    |
+286 |         assert forall|k: int| s.contains(k)
+    |                               ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/marzullo.rs:349:9
+    |
+349 | /         exists|p: Reading|
+350 | |             result.lo <= p && p <= result.hi
+351 | |                 && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat,
+    | |_________________________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> exercises/marzullo.rs:351:20
+    |
+351 |                 && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat,
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/marzullo.rs:398:18
+    |
+398 |           let jw = choose|jx: int|
+    |  __________________^
+399 | |             0 <= jx < intervals@.len()
+400 | |             && intervals_containing(intervals@, intervals@[jx].lo).len()
+401 | |                 >= intervals@.len() - f as nat;
+    | |______________________________________________^
+
+note:   trigger 1 of 1:
+   --> exercises/marzullo.rs:400:49
+    |
+400 |             && intervals_containing(intervals@, intervals@[jx].lo).len()
+    |                                                 ^^^^^^^^^^^^^^
+
+note: Verus printed one or more automatically chosen quantifier triggers
+      because it had low confidence in the chosen triggers.
+      To suppress these messages, do one of the following:
+        (1) manually annotate a single desired trigger using #[trigger]
+            (example: forall|i: int, j: int| f(i) && #[trigger] g(i) && #[trigger] h(j)),
+        (2) manually annotate multiple desired triggers using #![trigger ...]
+            (example: forall|i: int| #![trigger f(i)] #![trigger g(i)] f(i) && g(i)),
+        (3) accept the automatically chosen trigger using #![auto]
+            (example: forall|i: int, j: int| #![auto] f(i) && g(i) && h(j))
+        (4) use the --triggers-mode silent command-line option to suppress all printing of triggers.
+      (Note: triggers are used by the underlying SMT theorem prover to instantiate quantifiers;
+      the theorem prover instantiates a quantifier whenever some expression matches the
+      pattern specified by one of the quantifier's triggers.)
+   --> exercises/marzullo.rs:398:18
+    |
+398 |           let jw = choose|jx: int|
+    |  __________________^
+399 | |             0 <= jx < intervals@.len()
+400 | |             && intervals_containing(intervals@, intervals@[jx].lo).len()
+401 | |                 >= intervals@.len() - f as nat;
+    | |______________________________________________^
+
+verification results:: 10 verified, 0 errors
