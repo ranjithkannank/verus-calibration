@@ -1,0 +1,11 @@
+==================================
+ Ralph loop: cross_module_counter
+ Attempt cap: 15
+ Outer ceiling: 23
+ Dry-run: 0
+==================================
+
+--- iteration 1  |  state=WORK  |  attempts=0/15
+
+  > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
+  > log: logs/cross_module_counter/ralph/iter-1-work.log

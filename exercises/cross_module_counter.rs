@@ -52,7 +52,7 @@ mod counter {
                 c.value() == 0,
                 c.bound() == bound,
         {
-            unimplemented!()
+            Counter { value: 0, bound: bound }
         }
 
         pub fn incr(&mut self)
@@ -64,7 +64,7 @@ mod counter {
                 final(self).value() == old(self).value() + 1,
                 final(self).bound() == old(self).bound(),
         {
-            unimplemented!()
+            self.value = self.value + 1;
         }
 
         pub fn get(&self) -> (v: u32)
@@ -73,7 +73,7 @@ mod counter {
             ensures
                 v == self.value(),
         {
-            unimplemented!()
+            self.value
         }
     }
 }
@@ -86,7 +86,20 @@ mod client {
         ensures
             final_count == target,
     {
-        unimplemented!()
+        let mut c = Counter::new(target);
+        let mut i: u32 = 0;
+        while i < target
+            invariant
+                c.invariant(),
+                c.value() == i,
+                c.bound() == target,
+                i <= target,
+            decreases target - i,
+        {
+            c.incr();
+            i = i + 1;
+        }
+        c.get()
     }
 }
 
