@@ -137,12 +137,20 @@ EOF
 }
 
 # Determine state from filesystem artifacts. Echoes the state name.
+#
+# Note: escalation.md and status are checked with `-s` (non-empty) not
+# `-f` (exists). The architect cannot `rm` the escalation marker (the
+# tool whitelist denies it), so the agent has historically truncated
+# the file instead of deleting. The non-empty test makes the state
+# classifier agnostic to which the agent does. The orchestrator also
+# explicitly cleans these files in the post-THINK_REVISE block —
+# defense in depth.
 classify_state() {
   if [ -f "$DONE_FLAG" ]; then echo DONE; return; fi
   if [ -f "$BLOCKED" ]; then echo BLOCKED; return; fi
 
   if [ ! -f "$DESIGN" ]; then echo THINK; return; fi
-  if [ -f "$ESCALATION" ]; then echo THINK_REVISE; return; fi
+  if [ -s "$ESCALATION" ]; then echo THINK_REVISE; return; fi
 
   if [ -f "$REVIEW" ]; then
     if grep -qE '^\*\*Conclusion:\*\*[[:space:]]*APPROVE' "$REVIEW"; then
@@ -522,6 +530,15 @@ while [ $iteration -lt $MAX_OUTER_ITERATIONS ]; do
     THINK_REVISE)
       fire_claude THINK_REVISE "$MODEL_ARCHITECT" architect "$(prompt_think_revise)" ALLOWED_ARCHITECT
       [ $? -eq 2 ] && exit 2
+      # Defensive cleanup: the architect prompt says to delete escalation.md
+      # after writing the revision, but the agent cannot `rm` (the tool
+      # whitelist denies it) and historically falls back to truncating the
+      # file. Truncation does not satisfy the state classifier's old
+      # `-f` test, leading to a THINK_REVISE loop. The classifier now uses
+      # `-s` (non-empty) and we also explicitly remove both the empty
+      # escalation marker and the prior `escalated` status so the next
+      # classification routes to WORK.
+      rm -f "$ESCALATION" "$STATUS"
       ;;
 
     WORK)
