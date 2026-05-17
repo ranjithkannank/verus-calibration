@@ -142,6 +142,51 @@ proof fn lemma_contained_set_upto_extend(intervals: Seq<Interval>, p: Reading, i
 {
 }
 
+// --- Counting helper --------------------------------------------------------
+
+fn count_containing(intervals: &Vec<Interval>, p: Reading) -> (c: u32)
+    requires
+        intervals.len() <= u32::MAX as nat,
+    ensures
+        c as nat == intervals_containing(intervals@, p).len(),
+        intervals_containing(intervals@, p).finite(),
+        c as nat <= intervals.len() as nat,
+{
+    let mut c: u32 = 0;
+    let mut i: usize = 0;
+    proof {
+        assert(contained_set_upto(intervals@, p, 0) =~= Set::<int>::empty());
+    }
+    while i < intervals.len()
+        invariant
+            0 <= i as int <= intervals@.len() as int,
+            intervals.len() <= u32::MAX as nat,
+            c as nat == contained_set_upto(intervals@, p, i as int).len(),
+            contained_set_upto(intervals@, p, i as int).finite(),
+            c as nat <= i as nat,
+        decreases intervals.len() - i,
+    {
+        let iv = &intervals[i];
+        proof {
+            lemma_contained_set_upto_extend(intervals@, p, i as int);
+            lemma_contained_set_upto_in_range(intervals@, p, (i + 1) as int);
+        }
+        if iv.lo <= p && p <= iv.hi {
+            proof {
+                assert(!contained_set_upto(intervals@, p, i as int).contains(i as int));
+            }
+            c = c + 1;
+        }
+        i = i + 1;
+    }
+    proof {
+        assert(contained_set_upto(intervals@, p, intervals@.len() as int)
+            =~= intervals_containing(intervals@, p));
+        lemma_contained_set_in_range(intervals@, p);
+    }
+    c
+}
+
 // --- The exec entry point ---------------------------------------------------
 //
 // Returns an interval whose interior contains a point supported by at
