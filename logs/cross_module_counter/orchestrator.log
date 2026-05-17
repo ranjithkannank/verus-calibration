@@ -27,3 +27,6 @@
       All five checklist items pass:
       1. No `requires`/`ensures` clauses modified — diff only touches function bodies.
       2. The three pre-existing `closed spec fn`s (`value`, `bound`, `invariant`) are untouched.
+  > committed: 5358f32 review: cross_module_counter iter-2
+
+--- iteration 3  |  state=APPROVED  |  attempts=1/15
