@@ -42,6 +42,7 @@
 // The spec below is FROZEN. Iteration cap: 20. See AGENTS.md.
 
 use vstd::prelude::*;
+use vstd::set_lib::*;
 
 verus! {
 
@@ -72,6 +73,197 @@ pub open spec fn some_correct_ge(readings: Seq<Reading>, v: Reading) -> bool {
         0 <= i < readings.len() && correct_at(i) && readings[i] >= v
 }
 
+// --- Proof-only spec helpers ------------------------------------------------
+
+spec fn le_set(readings: Seq<Reading>, v: Reading) -> Set<int> {
+    Set::new(|i: int| 0 <= i < readings.len() && readings[i] <= v)
+}
+
+spec fn ge_set(readings: Seq<Reading>, v: Reading) -> Set<int> {
+    Set::new(|i: int| 0 <= i < readings.len() && readings[i] >= v)
+}
+
+spec fn le_set_upto(readings: Seq<Reading>, v: Reading, m: int) -> Set<int> {
+    Set::new(|i: int| 0 <= i < m && i < readings.len() && readings[i] <= v)
+}
+
+spec fn ge_set_upto(readings: Seq<Reading>, v: Reading, m: int) -> Set<int> {
+    Set::new(|i: int| 0 <= i < m && i < readings.len() && readings[i] >= v)
+}
+
+// --- Subset / finiteness lemmas ---------------------------------------------
+
+proof fn lemma_le_set_in_range(readings: Seq<Reading>, v: Reading)
+    ensures
+        le_set(readings, v).subset_of(set_int_range(0, readings.len() as int)),
+        le_set(readings, v).finite(),
+        le_set(readings, v).len() <= readings.len() as nat,
+{
+    lemma_int_range(0, readings.len() as int);
+    assert(le_set(readings, v).subset_of(set_int_range(0, readings.len() as int)));
+    lemma_len_subset(le_set(readings, v), set_int_range(0, readings.len() as int));
+}
+
+proof fn lemma_ge_set_in_range(readings: Seq<Reading>, v: Reading)
+    ensures
+        ge_set(readings, v).subset_of(set_int_range(0, readings.len() as int)),
+        ge_set(readings, v).finite(),
+        ge_set(readings, v).len() <= readings.len() as nat,
+{
+    lemma_int_range(0, readings.len() as int);
+    assert(ge_set(readings, v).subset_of(set_int_range(0, readings.len() as int)));
+    lemma_len_subset(ge_set(readings, v), set_int_range(0, readings.len() as int));
+}
+
+proof fn lemma_correct_indices_in_range(n: nat)
+    ensures
+        correct_indices(n).subset_of(set_int_range(0, n as int)),
+        correct_indices(n).finite(),
+        correct_indices(n).len() <= n,
+{
+    lemma_int_range(0, n as int);
+    assert(correct_indices(n).subset_of(set_int_range(0, n as int)));
+    lemma_len_subset(correct_indices(n), set_int_range(0, n as int));
+}
+
+proof fn lemma_le_set_upto_in_range(readings: Seq<Reading>, v: Reading, m: int)
+    requires 0 <= m <= readings.len(),
+    ensures
+        le_set_upto(readings, v, m).subset_of(set_int_range(0, m)),
+        le_set_upto(readings, v, m).finite(),
+        le_set_upto(readings, v, m).len() <= m as nat,
+{
+    lemma_int_range(0, m);
+    assert(le_set_upto(readings, v, m).subset_of(set_int_range(0, m)));
+    lemma_len_subset(le_set_upto(readings, v, m), set_int_range(0, m));
+}
+
+proof fn lemma_ge_set_upto_in_range(readings: Seq<Reading>, v: Reading, m: int)
+    requires 0 <= m <= readings.len(),
+    ensures
+        ge_set_upto(readings, v, m).subset_of(set_int_range(0, m)),
+        ge_set_upto(readings, v, m).finite(),
+        ge_set_upto(readings, v, m).len() <= m as nat,
+{
+    lemma_int_range(0, m);
+    assert(ge_set_upto(readings, v, m).subset_of(set_int_range(0, m)));
+    lemma_len_subset(ge_set_upto(readings, v, m), set_int_range(0, m));
+}
+
+// --- L3: prefix-set extension lemmas ---------------------------------------
+
+proof fn lemma_le_set_upto_extend(readings: Seq<Reading>, v: Reading, i: int)
+    requires 0 <= i < readings.len(),
+    ensures
+        readings[i] <= v ==>
+            le_set_upto(readings, v, i + 1)
+                =~= le_set_upto(readings, v, i).insert(i),
+        readings[i] > v ==>
+            le_set_upto(readings, v, i + 1)
+                =~= le_set_upto(readings, v, i),
+{
+}
+
+proof fn lemma_ge_set_upto_extend(readings: Seq<Reading>, v: Reading, i: int)
+    requires 0 <= i < readings.len(),
+    ensures
+        readings[i] >= v ==>
+            ge_set_upto(readings, v, i + 1)
+                =~= ge_set_upto(readings, v, i).insert(i),
+        readings[i] < v ==>
+            ge_set_upto(readings, v, i + 1)
+                =~= ge_set_upto(readings, v, i),
+{
+}
+
+// --- Counting helpers -------------------------------------------------------
+
+fn count_le(readings: &Vec<Reading>, v: Reading) -> (c: u32)
+    requires
+        readings.len() <= u32::MAX as nat,
+    ensures
+        c as nat == le_set(readings@, v).len(),
+        le_set(readings@, v).finite(),
+        c as nat <= readings.len() as nat,
+{
+    let mut c: u32 = 0;
+    let mut i: usize = 0;
+    proof {
+        assert(le_set_upto(readings@, v, 0) =~= Set::<int>::empty());
+    }
+    while i < readings.len()
+        invariant
+            0 <= i as int <= readings@.len() as int,
+            readings.len() <= u32::MAX as nat,
+            c as nat == le_set_upto(readings@, v, i as int).len(),
+            le_set_upto(readings@, v, i as int).finite(),
+            c as nat <= i as nat,
+        decreases readings.len() - i,
+    {
+        let r = readings[i];
+        proof {
+            lemma_le_set_upto_extend(readings@, v, i as int);
+            lemma_le_set_upto_in_range(readings@, v, (i + 1) as int);
+        }
+        if r <= v {
+            // le_set_upto(_, v, i+1) = le_set_upto(_, v, i).insert(i)
+            // i was not previously in the set (since i not < i), so len += 1
+            proof {
+                assert(!le_set_upto(readings@, v, i as int).contains(i as int));
+            }
+            c = c + 1;
+        }
+        i = i + 1;
+    }
+    proof {
+        assert(le_set_upto(readings@, v, readings@.len() as int) =~= le_set(readings@, v));
+        lemma_le_set_in_range(readings@, v);
+    }
+    c
+}
+
+fn count_ge(readings: &Vec<Reading>, v: Reading) -> (c: u32)
+    requires
+        readings.len() <= u32::MAX as nat,
+    ensures
+        c as nat == ge_set(readings@, v).len(),
+        ge_set(readings@, v).finite(),
+        c as nat <= readings.len() as nat,
+{
+    let mut c: u32 = 0;
+    let mut i: usize = 0;
+    proof {
+        assert(ge_set_upto(readings@, v, 0) =~= Set::<int>::empty());
+    }
+    while i < readings.len()
+        invariant
+            0 <= i as int <= readings@.len() as int,
+            readings.len() <= u32::MAX as nat,
+            c as nat == ge_set_upto(readings@, v, i as int).len(),
+            ge_set_upto(readings@, v, i as int).finite(),
+            c as nat <= i as nat,
+        decreases readings.len() - i,
+    {
+        let r = readings[i];
+        proof {
+            lemma_ge_set_upto_extend(readings@, v, i as int);
+            lemma_ge_set_upto_in_range(readings@, v, (i + 1) as int);
+        }
+        if r >= v {
+            proof {
+                assert(!ge_set_upto(readings@, v, i as int).contains(i as int));
+            }
+            c = c + 1;
+        }
+        i = i + 1;
+    }
+    proof {
+        assert(ge_set_upto(readings@, v, readings@.len() as int) =~= ge_set(readings@, v));
+        lemma_ge_set_in_range(readings@, v);
+    }
+    c
+}
+
 // --- The exec entry point ---------------------------------------------------
 //
 // Returns a value bracketed by some correct reading on each side.
@@ -100,8 +292,9 @@ pub fn ft_midpoint(readings: &Vec<Reading>, f: u32) -> (result: Reading)
         some_correct_le(readings@, result),
         some_correct_ge(readings@, result),
 {
-    // TODO(loop): fill in. Do not modify any spec above.
-    unimplemented!()
+    // Stub: not yet implementing the main loop. This will fail
+    // postconditions; iterate in subsequent attempts.
+    readings[0]
 }
 
 } // verus!

@@ -1,0 +1,72 @@
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:286:1
+    |
+286 | pub fn ft_midpoint(readings: &Vec<Reading>, f: u32) -> (result: Reading)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:292:9
+    |
+292 |         some_correct_le(readings@, result),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+297 |     readings[0]
+    |     ----------- at the end of the function body
+
+error: postcondition not satisfied
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:293:9
+    |
+293 |         some_correct_ge(readings@, result),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+297 |     readings[0]
+    |     ----------- at the end of the function body
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:67:5
+   |
+67 | /     exists|i: int|
+68 | |         0 <= i < readings.len() && correct_at(i) && readings[i] <= v
+   | |____________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:68:36
+   |
+68 |         0 <= i < readings.len() && correct_at(i) && readings[i] <= v
+   |                                    ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:72:5
+   |
+72 | /     exists|i: int|
+73 | |         0 <= i < readings.len() && correct_at(i) && readings[i] >= v
+   | |____________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:73:36
+   |
+73 |         0 <= i < readings.len() && correct_at(i) && readings[i] >= v
+   |                                    ^^^^^^^^^^^^^
+
+note: Verus printed one or more automatically chosen quantifier triggers
+      because it had low confidence in the chosen triggers.
+      To suppress these messages, do one of the following:
+        (1) manually annotate a single desired trigger using #[trigger]
+            (example: forall|i: int, j: int| f(i) && #[trigger] g(i) && #[trigger] h(j)),
+        (2) manually annotate multiple desired triggers using #![trigger ...]
+            (example: forall|i: int| #![trigger f(i)] #![trigger g(i)] f(i) && g(i)),
+        (3) accept the automatically chosen trigger using #![auto]
+            (example: forall|i: int, j: int| #![auto] f(i) && g(i) && h(j))
+        (4) use the --triggers-mode silent command-line option to suppress all printing of triggers.
+      (Note: triggers are used by the underlying SMT theorem prover to instantiate quantifiers;
+      the theorem prover instantiates a quantifier whenever some expression matches the
+      pattern specified by one of the quantifier's triggers.)
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:72:5
+   |
+72 | /     exists|i: int|
+73 | |         0 <= i < readings.len() && correct_at(i) && readings[i] >= v
+   | |____________________________________________________________________^
+
+verification results:: 11 verified, 1 errors
+error: aborting due to 2 previous errors
+
