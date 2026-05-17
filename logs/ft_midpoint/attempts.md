@@ -266,3 +266,35 @@ forall|j2: int| 0 <= j2 < j as int ==>
 and (b) in the post-loop block, call `lemma_exists_midpoint(readings@, f as nat)`,
 `choose` the witness `jw`, derive a contradiction with the invariant at `j2 = jw`,
 then replace `readings[0]` with `unreachable!()` discharged by `assert(false)`.
+
+## Attempt 7 — 2026-05-16
+**Sub-tasks worked on:** 14 (wire L6 into the post-loop). End-to-end verification.
+
+**Approach:**
+- Added a seventh conjunct to the main `while` invariant in `ft_midpoint`:
+  `forall|j2: int| 0 <= j2 < j as int ==>
+    le_set(readings@, #[trigger] readings@[j2]).len() < f as nat + 1
+    || ge_set(readings@, readings@[j2]).len() < f as nat + 1`.
+  The explicit `#[trigger] readings@[j2]` annotation matches the trigger that
+  Verus chose for the same shape in `lemma_exists_midpoint`'s ensures (so the
+  witness produced by `choose` later instantiates this invariant cleanly).
+- Maintained the new invariant at the bottom of the loop body (the
+  if-not-taken path) with four defensive asserts: `lec < threshold || gec
+  < threshold`, `v == readings@[j as int]`, the two count-equals-set-len
+  bridges, and the final disjunction at `j2 = j as int`.
+- Post-loop proof block: `assert(j == n)`, `lemma_exists_midpoint(readings@, f as nat)`,
+  `let jw = choose|jx: int| ...`, then the four bridge asserts that put
+  `jw` in `[0, j as int)`, surface the existential's two `>= f + 1`
+  bounds, instantiate the loop invariant at `j2 = jw` to get the
+  contradictory `< f + 1` disjunction, and conclude `assert(false)`.
+- The trailing `readings[0]` is now in a dead-code position (post
+  `assert(false)`); both postconditions discharge vacuously.
+
+**Verifier output:**
+```
+verification results:: 18 verified, 0 errors
+```
+18 verified (= attempt 6's 17 + `ft_midpoint` body). No errors. Verus
+exited 0.
+
+**Next idea:** Done — hand off to reviewer.

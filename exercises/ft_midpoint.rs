@@ -620,6 +620,9 @@ pub fn ft_midpoint(readings: &Vec<Reading>, f: u32) -> (result: Reading)
             readings.len() as nat >= 2 * (f as nat) + 1,
             correct_indices(readings.len() as nat).len()
                 >= readings.len() as nat - f as nat,
+            forall|j2: int| 0 <= j2 < j as int ==>
+                le_set(readings@, #[trigger] readings@[j2]).len() < f as nat + 1
+                || ge_set(readings@, readings@[j2]).len() < f as nat + 1,
         decreases n - j,
     {
         let v: Reading = readings[j];
@@ -634,12 +637,37 @@ pub fn ft_midpoint(readings: &Vec<Reading>, f: u32) -> (result: Reading)
             }
             return v;
         }
+        proof {
+            // Maintain the strengthened invariant at j2 = j: at least one
+            // count fell short of the threshold this iteration.
+            assert(lec < threshold || gec < threshold);
+            assert(v == readings@[j as int]);
+            assert(lec as nat == le_set(readings@, v).len());
+            assert(gec as nat == ge_set(readings@, v).len());
+            assert(le_set(readings@, readings@[j as int]).len() < f as nat + 1
+                || ge_set(readings@, readings@[j as int]).len() < f as nat + 1);
+        }
         j = j + 1;
     }
-    // Post-loop: requires lemma_exists_midpoint (L6), to be landed in a
-    // subsequent attempt. Placeholder return — verifier will flag the
-    // postcondition failure at this position, isolating the remaining
-    // obligation.
+    // Post-loop: j == n. The strengthened invariant excludes every index
+    // in [0, n). lemma_exists_midpoint produces a witness that contradicts
+    // it, so the post-loop path is unreachable.
+    proof {
+        assert(j == n);
+        lemma_exists_midpoint(readings@, f as nat);
+        let jw = choose|jx: int|
+            0 <= jx < readings@.len()
+            && le_set(readings@, readings@[jx]).len() >= f as nat + 1
+            && ge_set(readings@, readings@[jx]).len() >= f as nat + 1;
+        assert(0 <= jw < readings@.len());
+        assert(le_set(readings@, readings@[jw]).len() >= f as nat + 1);
+        assert(ge_set(readings@, readings@[jw]).len() >= f as nat + 1);
+        // Loop invariant at j2 = jw gives the opposite disjunction.
+        assert(0 <= jw < j as int);
+        assert(le_set(readings@, readings@[jw]).len() < f as nat + 1
+            || ge_set(readings@, readings@[jw]).len() < f as nat + 1);
+        assert(false);
+    }
     readings[0]
 }
 
