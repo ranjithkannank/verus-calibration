@@ -1,0 +1,7 @@
+Attempt 2 complete.
+
+**Summary:**
+- **Sub-task worked on:** Sub-tasks 8 & 9 — the L4 pigeonhole lemmas (`lemma_pigeonhole_le` and `lemma_pigeonhole_ge`).
+- **Result:** 13 verified, 1 error (up from 11 verified in attempt 1). Both new lemmas verify cleanly. The only remaining error is the expected `readings[0]` stub failing the postcondition.
+- **Approach:** Each pigeonhole lemma uses inclusion-exclusion via `vstd::set_lib::lemma_set_intersect_union_lens` to derive `|A ∩ B| >= (n − f) + (f + 1) − n = 1`, then extracts a witness with `axiom_is_empty` / `axiom_is_empty_len0` to discharge the `some_correct_le`/`some_correct_ge` existential.
+- **Status:** `verus_failed` (one error remaining, on the stub — to be resolved in attempt 3 by replacing the stub with the main loop).
