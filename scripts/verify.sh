@@ -12,6 +12,7 @@ EXERCISES=(
   exercises/ft_midpoint.rs
   exercises/marzullo.rs
   exercises/cross_module_counter.rs
+  exercises/counter_multifile/main.rs
 )
 
 fail=0

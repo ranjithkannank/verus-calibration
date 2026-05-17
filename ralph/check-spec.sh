@@ -4,27 +4,27 @@
 # Usage:
 #   ./ralph/check-spec.sh <exercise>
 #
-# Contract: a "witness" file exercises/<name>_witness.rs exists,
-# contains a reference implementation of the same spec as
-# exercises/<name>.rs, and verifies under Verus with no cheat tokens.
-# If it does, the spec is provably satisfiable. If verus fails, the
-# spec is either unprovable or the witness is wrong — either way the
-# operator must fix something before tagging spec-frozen-<name>.
+# Two layouts are supported:
 #
-# This catches two classes of bug the agent loop cannot:
-#   1. The spec is logically unsatisfiable (e.g. marzullo's original
-#      frozen spec, missing the Helly-1D precondition — no algorithm
-#      can verify against that postcondition).
-#   2. The spec uses syntax that no longer compiles (e.g. bounded_log's
-#      pre-final(self) syntax under newer Verus releases).
+#   Single-file:
+#     exercises/<name>.rs                    # spec (frozen)
+#     exercises/<name>_witness.rs            # operator's reference impl
 #
-# Both cost agent cycles when caught downstream. This tool catches
-# them at operator time.
+#   Multi-file:
+#     exercises/<name>/main.rs               # entry, declares submodules
+#     exercises/<name>/<module>.rs           # per-module spec files
+#     exercises/<name>_witness/main.rs       # operator's reference impl
+#     exercises/<name>_witness/<module>.rs   # operator's reference impl
+#
+# In either case the tool runs verus on the witness, applies the
+# cheat-token filter, and verifies that every `requires`/`ensures`
+# clause body in the exercise file(s) appears verbatim in the
+# corresponding witness file(s).
 #
 # Exit codes:
-#   0  spec is satisfiable (witness verifies, no cheat tokens)
+#   0  spec is satisfiable
 #   1  spec failed verification (verus error)
-#   2  witness file missing or input error
+#   2  witness missing or input error
 #   3  witness contains cheat tokens
 
 set -u
@@ -38,44 +38,87 @@ EXERCISE="$1"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-EXFILE="exercises/${EXERCISE}.rs"
-WITNESS="exercises/${EXERCISE}_witness.rs"
+# --- Detect layout -----------------------------------------------------------
 
-if [ ! -f "$EXFILE" ]; then
-  echo "error: exercise file not found: $EXFILE" >&2
-  exit 2
-fi
+EXFILE_SINGLE="exercises/${EXERCISE}.rs"
+WITNESS_SINGLE="exercises/${EXERCISE}_witness.rs"
+EXDIR_MULTI="exercises/${EXERCISE}"
+WITNESS_MULTI="exercises/${EXERCISE}_witness"
 
-if [ ! -f "$WITNESS" ]; then
-  echo "error: witness file not found: $WITNESS" >&2
+if [ -d "$EXDIR_MULTI" ] && [ -d "$WITNESS_MULTI" ]; then
+  LAYOUT="multi"
+elif [ -f "$EXFILE_SINGLE" ] && [ -f "$WITNESS_SINGLE" ]; then
+  LAYOUT="single"
+elif [ -f "$EXFILE_SINGLE" ] && [ ! -f "$WITNESS_SINGLE" ]; then
+  echo "error: witness file not found: $WITNESS_SINGLE" >&2
   echo
   echo "Before tagging spec-frozen-${EXERCISE}, write a reference" >&2
-  echo "implementation in $WITNESS that satisfies the same spec as" >&2
-  echo "$EXFILE. The witness proves the frozen spec admits a model." >&2
+  echo "implementation in $WITNESS_SINGLE that satisfies the same spec" >&2
+  echo "as $EXFILE_SINGLE." >&2
+  exit 2
+elif [ -d "$EXDIR_MULTI" ] && [ ! -d "$WITNESS_MULTI" ]; then
+  echo "error: witness directory not found: $WITNESS_MULTI" >&2
+  echo
+  echo "Before tagging spec-frozen-${EXERCISE}, write a reference" >&2
+  echo "implementation under $WITNESS_MULTI/ mirroring the layout of" >&2
+  echo "$EXDIR_MULTI/." >&2
+  exit 2
+else
+  echo "error: no exercise found at $EXFILE_SINGLE or $EXDIR_MULTI" >&2
   exit 2
 fi
 
-# --- 1. Cheat-token check on the witness -------------------------------------
-#
-# Mirrors the pre-commit hook's cheat-token logic but applies to the
-# witness file's full body, not just the staged diff. A cheat in the
-# witness would silently invalidate the satisfiability claim.
+# --- File lists for each mode ------------------------------------------------
+
+if [ "$LAYOUT" = "single" ]; then
+  EXERCISE_FILES=("$EXFILE_SINGLE")
+  WITNESS_FILES=("$WITNESS_SINGLE")
+  VERUS_ENTRY="$WITNESS_SINGLE"
+else
+  EXERCISE_FILES=()
+  WITNESS_FILES=()
+  while IFS= read -r f; do EXERCISE_FILES+=("$f"); done \
+    < <(find "$EXDIR_MULTI" -maxdepth 1 -name '*.rs' -type f | sort)
+  while IFS= read -r f; do WITNESS_FILES+=("$f"); done \
+    < <(find "$WITNESS_MULTI" -maxdepth 1 -name '*.rs' -type f | sort)
+  VERUS_ENTRY="$WITNESS_MULTI/main.rs"
+
+  if [ ! -f "$VERUS_ENTRY" ]; then
+    echo "error: multi-file witness needs $VERUS_ENTRY (entry point)" >&2
+    exit 2
+  fi
+
+  # Pair-check: every file in EXERCISE_FILES has a same-named file in WITNESS_FILES.
+  for ex in "${EXERCISE_FILES[@]}"; do
+    base=$(basename "$ex")
+    if [ ! -f "$WITNESS_MULTI/$base" ]; then
+      echo "error: witness is missing module file: $WITNESS_MULTI/$base" >&2
+      echo "       (exercise has $ex; witness must mirror)" >&2
+      exit 2
+    fi
+  done
+fi
+
+# --- 1. Cheat-token check on every witness file ------------------------------
 
 CHEAT_RC=0
-check_cheat() {
-  local pattern="$1"
-  local label="$2"
-  if grep -nE "$pattern" "$WITNESS" >/dev/null; then
-    echo "  [cheat] witness contains '$label':" >&2
-    grep -nE "$pattern" "$WITNESS" | sed 's/^/    /' >&2
+check_cheat_file() {
+  local file="$1"
+  local pattern="$2"
+  local label="$3"
+  if grep -nE "$pattern" "$file" >/dev/null; then
+    echo "  [cheat] $file contains '$label':" >&2
+    grep -nE "$pattern" "$file" | sed 's/^/    /' >&2
     CHEAT_RC=1
   fi
 }
-check_cheat '\bassume[[:space:]]*\('     'assume(...)'
-check_cheat 'external_body'              'external_body'
-check_cheat 'unreachable!\(\)'           'unreachable!()'
-check_cheat '\bpanic!\('                 'panic!(...)'
-check_cheat 'assume_specification'       'assume_specification'
+for wf in "${WITNESS_FILES[@]}"; do
+  check_cheat_file "$wf" '\bassume[[:space:]]*\('     'assume(...)'
+  check_cheat_file "$wf" 'external_body'              'external_body'
+  check_cheat_file "$wf" 'unreachable!\(\)'           'unreachable!()'
+  check_cheat_file "$wf" '\bpanic!\('                 'panic!(...)'
+  check_cheat_file "$wf" 'assume_specification'       'assume_specification'
+done
 
 if [ $CHEAT_RC -ne 0 ]; then
   echo >&2
@@ -84,11 +127,6 @@ if [ $CHEAT_RC -ne 0 ]; then
 fi
 
 # --- 2. Spec-line presence check ---------------------------------------------
-#
-# Every requires/ensures clause body in the exercise file must also
-# appear verbatim in the witness. We deliberately re-use the same
-# indentation-tracking awk from the pre-commit hook so the checks
-# stay consistent.
 
 extract_spec_clauses() {
   awk '
@@ -114,32 +152,41 @@ extract_spec_clauses() {
   ' "$1"
 }
 
-EX_SPEC=$(extract_spec_clauses "$EXFILE")
-WITNESS_BODY=$(cat "$WITNESS")
 SPEC_MISMATCH=0
-
-while IFS= read -r line; do
-  [ -z "$line" ] && continue
-  if ! echo "$WITNESS_BODY" | grep -qFx "$line"; then
-    if [ $SPEC_MISMATCH -eq 0 ]; then
-      echo "  [spec] witness is missing spec lines from $EXFILE:" >&2
-      SPEC_MISMATCH=1
-    fi
-    echo "    $line" >&2
+for ex in "${EXERCISE_FILES[@]}"; do
+  if [ "$LAYOUT" = "single" ]; then
+    paired="$WITNESS_SINGLE"
+  else
+    paired="$WITNESS_MULTI/$(basename "$ex")"
   fi
-done <<< "$EX_SPEC"
+
+  ex_spec=$(extract_spec_clauses "$ex")
+  [ -z "$ex_spec" ] && continue
+  paired_body=$(cat "$paired")
+
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    if ! echo "$paired_body" | grep -qFx "$line"; then
+      if [ $SPEC_MISMATCH -eq 0 ]; then
+        echo "  [spec] witness is missing spec lines from $ex:" >&2
+        SPEC_MISMATCH=1
+      fi
+      echo "    (in $paired) $line" >&2
+    fi
+  done <<< "$ex_spec"
+done
 
 if [ $SPEC_MISMATCH -ne 0 ]; then
   echo >&2
   echo "The witness must carry the same requires/ensures clauses as" >&2
-  echo "the exercise file. Fix the witness to match, then re-run." >&2
+  echo "the exercise file(s). Fix the witness to match, then re-run." >&2
   exit 2
 fi
 
 # --- 3. Verus verification of the witness ------------------------------------
 
-echo "Verifying witness: $WITNESS"
-if verus "$WITNESS" --crate-type=lib; then
+echo "Verifying witness: $VERUS_ENTRY"
+if verus "$VERUS_ENTRY" --crate-type=lib; then
   echo
   echo "OK: spec is satisfiable. Witness verifies, no cheat tokens."
   echo "You may now tag spec-frozen-${EXERCISE} and start the agent loop."

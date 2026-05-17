@@ -29,6 +29,7 @@ errors=()
 allowed_path() {
   case "$1" in
     exercises/*.rs|exercises/*.design.md)       return 0 ;;
+    exercises/*/*.rs|exercises/*/*.md)          return 0 ;;
     logs/*)                                      return 0 ;;
     writeup/*)                                   return 0 ;;
     AGENTS.md|ORCHESTRATION.md|README.md|LICENSE|BACKLOG.md) return 0 ;;
@@ -50,7 +51,7 @@ done <<< "$STAGED"
 
 while IFS= read -r f; do
   case "$f" in
-    exercises/*.rs) ;;
+    exercises/*.rs|exercises/*/*.rs) ;;
     *) continue ;;
   esac
 
@@ -82,11 +83,27 @@ done <<< "$STAGED"
 # --- 3. Spec preservation -----------------------------------------------------
 
 while IFS= read -r f; do
+  # Derive the exercise name from the path:
+  #   exercises/<name>.rs           -> name = <name>          (single-file)
+  #   exercises/<name>/<file>.rs    -> name = <name>          (multi-file)
+  # Witness directories (`exercises/<name>_witness/...`) are skipped here
+  # because no `spec-frozen-<name>_witness` tag exists; the cheat-token
+  # check still applies to them via the earlier loop.
   case "$f" in
-    exercises/*.rs) ;;
-    *) continue ;;
+    exercises/*/*.rs)
+      # exercises/<dir>/<file>.rs
+      dir=$(echo "$f" | cut -d/ -f2)
+      case "$dir" in *_witness) continue ;; esac
+      ex="$dir"
+      ;;
+    exercises/*.rs)
+      ex=$(basename "$f" .rs)
+      case "$ex" in *_witness) continue ;; esac
+      ;;
+    *)
+      continue
+      ;;
   esac
-  ex=$(basename "$f" .rs)
   tag="spec-frozen-${ex}"
 
   git rev-parse --verify --quiet "$tag" >/dev/null 2>&1 || continue
