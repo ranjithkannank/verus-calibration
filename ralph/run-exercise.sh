@@ -38,8 +38,31 @@ EXERCISE="$1"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-EXFILE="exercises/${EXERCISE}.rs"
-DESIGN="exercises/${EXERCISE}.design.md"
+# Layout detection. Two shapes are supported:
+#   single-file:  exercises/<name>.rs + exercises/<name>.design.md
+#   multi-file:   exercises/<name>/main.rs + exercises/<name>/<module>.rs + design.md
+#
+# EXFILE is always the verus entry point. EXSCOPE describes the
+# editable scope (a single file or a directory). EX_DIFF_PATH is what
+# `git diff` operates on for reviewer audits.
+if [ -d "exercises/${EXERCISE}" ]; then
+  LAYOUT="multi"
+  EXDIR="exercises/${EXERCISE}"
+  EXFILE="${EXDIR}/main.rs"
+  DESIGN="${EXDIR}/design.md"
+  EX_DIFF_PATH="$EXDIR"
+  EXSCOPE="the files under ${EXDIR}/ (verus entry: ${EXFILE})"
+elif [ -f "exercises/${EXERCISE}.rs" ]; then
+  LAYOUT="single"
+  EXDIR="exercises"
+  EXFILE="exercises/${EXERCISE}.rs"
+  DESIGN="exercises/${EXERCISE}.design.md"
+  EX_DIFF_PATH="$EXFILE"
+  EXSCOPE="$EXFILE"
+else
+  echo "no such exercise: ${EXERCISE} (neither exercises/${EXERCISE}.rs nor exercises/${EXERCISE}/ exists)" >&2
+  exit 2
+fi
 LOGDIR="logs/${EXERCISE}"
 RAWDIR="${LOGDIR}/raw"
 ATTEMPTS="${LOGDIR}/attempts.md"
@@ -60,6 +83,7 @@ case "$EXERCISE" in
   ft_midpoint)   ATTEMPT_CAP=20 ;;
   marzullo)      ATTEMPT_CAP=20 ;;
   cross_module_counter) ATTEMPT_CAP=15 ;;
+  counter_multifile) ATTEMPT_CAP=10 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 
@@ -98,6 +122,7 @@ MODEL_REVIEWER="claude-opus-4-7"
 # --- preflight ----------------------------------------------------------------
 
 [ -f "$EXFILE" ] || { echo "missing: $EXFILE" >&2; exit 2; }
+[ -f "$DESIGN" ] || { echo "missing: $DESIGN" >&2; exit 2; }
 [ -d ".claude/agents" ] || { echo "missing: .claude/agents (subagent defs)" >&2; exit 2; }
 git rev-parse --verify --quiet "$SPEC_TAG" >/dev/null \
   || { echo "missing git tag: $SPEC_TAG (run setup-check.sh)" >&2; exit 2; }
@@ -354,14 +379,14 @@ You have fresh context. Read in this order:
 
   1. AGENTS.md
   2. .claude/agents/architect.md (your role definition)
-  3. $EXFILE (the frozen spec)
+  3. $EXSCOPE (the frozen spec)
 
 Then write $DESIGN per the architect role spec — representation choice,
 key invariants, loop-invariant sketches, predicted helper lemmas, SMT
 trouble spots, and a suggested order of operations.
 
-Do NOT edit $EXFILE. Do NOT run verus. Commit the design note with
-message "architect: design for ${EXERCISE}" and stop.
+Do NOT edit anything in $EXSCOPE. Do NOT run verus. Commit the design
+note with message "architect: design for ${EXERCISE}" and stop.
 EOF
 }
 
@@ -371,7 +396,7 @@ You have fresh context. The implementer escalated. Read:
 
   1. AGENTS.md
   2. .claude/agents/architect.md
-  3. $EXFILE (current state)
+  3. $EXSCOPE (current state)
   4. $DESIGN (existing design note)
   5. $ESCALATION (the implementer's blocker description)
 
@@ -393,7 +418,7 @@ Read in this order:
 
   1. AGENTS.md
   2. .claude/agents/implementer.md (your role definition)
-  3. $EXFILE (current state of the exercise)
+  3. $EXSCOPE (current state of the exercise)
   4. $DESIGN (the architect's strategy)
   5. $ATTEMPTS if it exists (your prior attempts — do not repeat them)
   6. The most recent file in $RAWDIR/ if any (last verifier output)
@@ -412,7 +437,9 @@ Make EXACTLY ONE new attempt. Scope it narrowly:
 
 Then perform the per-attempt protocol:
 
-  a. Edit $EXFILE — implement or refine the chosen sub-task only.
+  a. Edit $EXSCOPE — implement or refine the chosen sub-task only.
+     For multi-file exercises you may edit any file in the directory;
+     verus walks the rest via the \`mod\` declarations.
   b. Run: verus $EXFILE --crate-type=lib > $RAWDIR/attempt-${attempt_num}.txt 2>&1
      (You can `cat` the file afterwards to inspect the output.)
   c. Append an entry to $ATTEMPTS using the format in AGENTS.md.
@@ -446,7 +473,7 @@ Read in this order:
 
   1. AGENTS.md
   2. .claude/agents/implementer.md
-  3. $EXFILE
+  3. $EXSCOPE
   4. $DESIGN
   5. $ATTEMPTS
   6. $REVIEW (the rejection — pay attention to which rule was violated)
@@ -469,8 +496,8 @@ Read in this order:
   1. AGENTS.md
   2. .claude/agents/reviewer.md (your role definition, including the
      five-point checklist)
-  3. The diff: \`git diff ${SPEC_TAG}..HEAD -- $EXFILE\`
-  4. $EXFILE (current state, for line references)
+  3. The diff: \`git diff ${SPEC_TAG}..HEAD -- $EX_DIFF_PATH\`
+  4. $EXSCOPE (current state, for line references)
 
 Run the five-point checklist verbatim. Write $REVIEW in the format specified
 in your role definition (Conclusion: APPROVE | REJECT, plus checklist
