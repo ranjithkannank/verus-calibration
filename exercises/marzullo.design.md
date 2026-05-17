@@ -469,3 +469,67 @@ it. If the orchestrator's re-trigger heuristic is "file exists" (not
 the file. Likewise the role's tool set does not include `git`, so the
 "Commit with message …" step in the invocation request cannot be
 executed by me; the operator must run the commit.
+
+## Revision (escalation 20260517T045216Z)
+
+### Third re-invocation on the same unchanged state
+
+This is the third consecutive architect re-invocation triggered by
+the persistent presence of `logs/marzullo/escalation.md`. The file
+remains empty (one line, ~1 byte). Nothing about the repo state has
+changed since the previous revision (20260517T044911Z):
+
+- `exercises/marzullo.rs`: unchanged since attempt 5. 8 verified, 2
+  errors. The Helly-1D obligation at line 292 and the post-loop
+  placeholder at line 387 are the only failures.
+- `logs/marzullo/attempts.md`: last entry is still attempt 6
+  (escalation). No new implementer attempts.
+- `logs/marzullo/status`: still `escalated`.
+- `logs/marzullo/blocked.md`: still not written.
+
+The implementer has not been re-invoked between the previous two
+architect calls and this one, despite the previous revision's
+explicit direction that the orchestrator's next action should be
+"Re-invoke the implementer, not the architect." Whatever is driving
+the re-trigger loop — most likely "escalation.md exists" as a
+sufficient condition — is firing on the architect side rather than
+handing control back to the implementer.
+
+### No new design content
+
+There is genuinely nothing further for this role to add. The spec gap
+is documented (twice over); the constructive counterexample stands;
+the partial proof is verified up to the one structurally
+underivable assertion; the exit path (`blocked.md` filed by the
+implementer) is unchanged. Any further architect work on this design
+note would be padding, not signal.
+
+### Tooling reality
+
+The architect tool set is `Read`, `Glob`, `Grep`, `Write`. I will
+overwrite `logs/marzullo/escalation.md` to empty once more in case
+the previous truncation was undone or in case the trigger heuristic
+inspects content rather than existence. I cannot `rm` the file. I
+cannot `git commit`. Both require operator intervention.
+
+### Loop-break recommendation to the operator
+
+If you (the human operator) are reading this and the loop is still
+firing on this file:
+
+1. Run `rm logs/marzullo/escalation.md`.
+2. Update `logs/marzullo/status` to `blocked` (or whatever your
+   harness uses to mean "stop re-invoking on this exercise").
+3. If you want the `blocked.md` written automatically, re-invoke the
+   **implementer** subagent with the prompt: "Write
+   `logs/marzullo/blocked.md` per the architect design note's
+   Revision 20260517T044650Z §'Concretely: what the implementer
+   should do next' item 2 checklist, commit with message
+   `marzullo: blocked-by-spec-gap`, set `logs/marzullo/status` to
+   `blocked`, and stop."
+4. Move on to the next exercise. The marzullo design note and the
+   partial proof are the deliverable from this exercise; the data
+   point ("frozen spec is not provable under the experiment's hard
+   rules") is the result.
+
+Stopping.
