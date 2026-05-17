@@ -27,3 +27,6 @@
       Summary of the audit:
       - The diff against `spec-frozen-counter_producer` touches only function bodies for the four previously-`unimplemented!()` functions (`Counter::new`, `Counter::incr`, `Counter::get`, `pipeline`) plus the body of `produce`.
       - No `requires`/`ensures` clauses changed.
+  > committed: 7c1cc33 review: counter_producer iter-2
+
+--- iteration 3  |  state=APPROVED  |  attempts=1/12
