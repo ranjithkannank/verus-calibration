@@ -357,6 +357,55 @@ proof fn lemma_pigeonhole_ge(readings: Seq<Reading>, v: Reading, f: nat)
     assert(0 <= i < readings.len() && correct_at(i) && readings[i] >= v);
 }
 
+// --- L5: argmax / argmin over a finite set of reading indices --------------
+
+proof fn lemma_max_reading_in_set(s: Set<int>, readings: Seq<Reading>) -> (jm: int)
+    requires
+        s.finite(),
+        s.len() >= 1,
+        forall|j: int| s.contains(j) ==> 0 <= j < readings.len(),
+    ensures
+        s.contains(jm),
+        forall|j: int| s.contains(j) ==> readings[j] <= readings[jm],
+    decreases s.len(),
+{
+    axiom_is_empty_len0(s);
+    axiom_is_empty(s);
+    let j0 = choose|x: int| s.contains(x);
+    assert(s.contains(j0));
+    let s2 = s.remove(j0);
+    assert(s2.finite());
+    assert(s2.len() == s.len() - 1);
+    if s2.len() == 0 {
+        // s2 is empty, so s contains only j0.
+        assert forall|j: int| s.contains(j) implies readings[j] <= readings[j0] by {
+            if j != j0 {
+                assert(s2.contains(j));
+                axiom_is_empty_len0(s2);
+                axiom_is_empty(s2);
+            }
+        }
+        j0
+    } else {
+        let jm2 = lemma_max_reading_in_set(s2, readings);
+        if readings[j0] >= readings[jm2] {
+            assert forall|j: int| s.contains(j) implies readings[j] <= readings[j0] by {
+                if j != j0 {
+                    assert(s2.contains(j));
+                }
+            }
+            j0
+        } else {
+            assert forall|j: int| s.contains(j) implies readings[j] <= readings[jm2] by {
+                if j != j0 {
+                    assert(s2.contains(j));
+                }
+            }
+            jm2
+        }
+    }
+}
+
 // --- The exec entry point ---------------------------------------------------
 //
 // Returns a value bracketed by some correct reading on each side.

@@ -128,3 +128,40 @@ in-loop early return path). Only the post-loop fall-through fails.
 existential-witness `choose` + `assert(false)` to discharge the
 fall-through, then change `readings[0]` to a `proof { ... }
 unreachable!()` (legitimately unreachable, discharged by `assert(false)`).
+
+## Attempt 4 — 2026-05-16
+**Sub-tasks worked on:** 11 (L5 argmax — `lemma_max_reading_in_set`). The
+mirror `lemma_min_reading_in_set` (sub-task 12) is deferred to the next
+attempt. The post-loop `readings[0]` placeholder remains.
+
+**Approach:**
+- Added `lemma_max_reading_in_set(s: Set<int>, readings: Seq<Reading>) -> (jm: int)`
+  with `decreases s.len()` recursion. Skeleton:
+  1. `axiom_is_empty_len0(s)` + `axiom_is_empty(s)` to extract a witness
+     `j0 = choose|x: int| s.contains(x)` from `s.len() >= 1` + `s.finite()`.
+  2. Let `s2 = s.remove(j0)`. Defensive asserts on `s2.finite()` and
+     `s2.len() == s.len() - 1` to satisfy the decreases measure.
+  3. Base case `s2.len() == 0`: prove `s.contains(j) ==> j == j0` by
+     contradiction using `axiom_is_empty_len0(s2)` + `axiom_is_empty(s2)`;
+     return `j0`.
+  4. Recursive case: get `jm2` from the recursive call. If
+     `readings[j0] >= readings[jm2]`, return `j0` (assert the forall via
+     case-split on `j == j0`). Else return `jm2` (symmetric).
+
+**Verifier output:**
+```
+verification results:: 15 verified, 1 errors
+error: postcondition not satisfied
+   --> ft_midpoint.rs:434:9
+434 |         some_correct_le(readings@, result),
+        failed this postcondition
+... readings[0] at end of function body
+```
+15 verified (= attempt 3's 14 + the new lemma_max_reading_in_set). Only
+the unchanged post-loop placeholder fails, which is expected. The new
+lemma — including the recursion on `decreases s.len()` and the two
+`axiom_is_empty*` invocations — verified standalone.
+
+**Next idea:** Sub-task 12: land the mirror `lemma_min_reading_in_set`
+(identical skeleton, picks the index with minimum reading instead of
+maximum).
