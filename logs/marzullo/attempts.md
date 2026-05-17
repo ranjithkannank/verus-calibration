@@ -118,3 +118,22 @@ The remaining error is still the `marzullo` postcondition (blocked on the same l
 - (Attempt 6) Argmin over `correct_indices` of `intervals[j].hi` instead of argmax of `intervals[j].lo` — but the postcondition specifically picks `intervals[j].lo` as the candidate point, so the change of pivot doesn't shift the gap; both directions need the Helly link.
 - (Attempt 7) Try to derive the Helly fact directly from the existing preconditions via a different angle (e.g., pigeonhole on the union of correct intervals against `[lo, hi]` of `intervals[jm]`) — but `correct_at` is uninterpreted with no relational hypothesis, so any such derivation must fail.
 If both variants land on the same `lo <= hi` cross-interval obligation, write `escalation.md` confirming the spec gap.
+
+## Attempt 6 — 2026-05-16
+**Sub-tasks worked on:** Escalation (no code changes).
+
+**Approach:** Wrote `logs/marzullo/escalation.md` instead of trying further variants on the Helly obligation. Rationale:
+- Attempt 5's argmax-over-correct-indices is the natural proof shape, and it failed at exactly the Helly step the design predicted.
+- I have a **constructive counterexample** from the design's "Critical caveat" (intervals=[[0,0],[10,10],[20,20]], f=1, n=3, with correct_at(0)=correct_at(1)=true): all preconditions hold but no point lies in ≥ n−f = 2 intervals. So the postcondition is structurally false under the frozen preconditions, and no variant — argmin on `hi`, different candidate point, Byzantine-aware pigeonhole — can avoid the same gap (the variants section of the escalation note enumerates them).
+- The implementer.md "3 consecutive attempts on same obligation before escalation" rule is an upper bound; AGENTS.md rule #4 says "Never weaken a spec to make verification pass." With a proof of unprovability in hand, escalating now respects both rules.
+
+**Verifier output:** EXIT=1. **8 verified, 2 errors** (unchanged from attempt 5 — no code changed). Same two failures:
+```
+error: assertion failed
+   --> exercises/marzullo.rs:292:20
+292 |             assert(intervals[jm].lo <= intervals[k].hi);
+error: postcondition not satisfied
+   --> exercises/marzullo.rs:334:9 (marzullo)
+```
+
+**Next idea:** Escalated. Orchestrator should re-invoke the architect to either (a) add the missing `correct_intervals_overlap` Helly-1D precondition to the frozen `marzullo` spec, or (b) mark the exercise blocked-by-spec-gap. The verified-up-to-the-Helly-step machinery (`count_containing`, `lemma_max_lo_in_set`, structural subset/finiteness lemmas, the main loop's trigger-aligned invariant) remains intact and would close immediately once the precondition is in place. Full analysis in `logs/marzullo/escalation.md`.
