@@ -1,0 +1,8 @@
+Attempt 3 complete. Summary:
+
+- **Sub-task worked on:** #10 from the design — added the main `while` loop in `ft_midpoint` with in-loop pigeonhole early return.
+- **Result:** 14 verified (was 13). The `ft_midpoint` body now verifies for the early-return path; only the post-loop fall-through `readings[0]` fails the two `some_correct_*` postconditions.
+- **Status:** `verus_failed` (clean fail isolated to the post-loop case, exactly as the design predicted).
+- **Next attempt should:** land L5 (`lemma_max_reading_in_set` / `lemma_min_reading_in_set`) and L6 (`lemma_exists_midpoint`), then wire the existence witness + `assert(false)` into the post-loop block.
+
+Working tree is clean except for an untracked `logs/ft_midpoint/ralph/iter-4-work.log` that is outside my scope.
