@@ -1,0 +1,16 @@
+Clean tree confirmed. Attempt 7 complete:
+
+## Summary
+
+**Action taken:** Wrote `logs/marzullo/blocked.md` per the architect's third-revision direction (design.md `20260517T045216Z`). No code changes — the partial proof (8 verified obligations) is the deliverable.
+
+**Rationale:** The architect has now ruled on the structural spec gap three times (`20260517T044650Z`, `20260517T044911Z`, `20260517T045216Z`). Each revision directs `blocked.md` rather than re-design. I have a constructive counterexample (`intervals=[[0,0],[10,10],[20,20]]`, `f=1`, `correct_at={0,1}`) proving the postcondition is unsatisfiable under a satisfying assignment of the preconditions — so no algorithmic variant can succeed. Per AGENTS.md rule #4 and the implementer prompt's "must not do" exit clause, `blocked.md` is the correct termination.
+
+**Artifacts committed (commit `c859e6f`):**
+- `logs/marzullo/blocked.md` — full structural-gap analysis, counterexample, failing obligation, suggested spec amendment (documentation only), verified-machinery inventory, rejected-alternatives list.
+- `logs/marzullo/escalation.md` — one-paragraph pointer to `blocked.md` for orchestrator stability.
+- `logs/marzullo/attempts.md` — attempt 7 entry.
+- `logs/marzullo/status` — set to `escalated` (closest valid token to "blocked" in the implementer prompt's status vocabulary).
+- `logs/marzullo/raw/attempt-7.txt` — verifier output: `8 verified, 2 errors` (unchanged).
+
+**Final state:** Working tree clean, blocked-by-spec-gap.
