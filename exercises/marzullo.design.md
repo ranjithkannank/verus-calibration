@@ -389,3 +389,83 @@ the spec) is not mine to take — the spec is frozen and the architect
 prompt explicitly forbids proposing spec changes. Option 2 (mark
 blocked-by-spec-gap) is the correct one and is what this revision
 directs.
+
+## Revision (escalation 20260517T044911Z)
+
+### Trigger: stale orchestrator state, no new implementer content
+
+This re-invocation appears to be triggered by the **continued
+existence** of `logs/marzullo/escalation.md`, not by new content from
+the implementer. The file is one byte / one empty line — the previous
+architect revision (20260517T044650Z) emptied it because the
+available tool set offers no `rm`/`Bash` capability (see
+`logs/marzullo/ralph/iter-8-think_revise.log`), and the orchestrator
+appears to re-trigger on the file's presence regardless of content.
+
+State of the world at this revision:
+
+- `exercises/marzullo.rs`: unchanged since attempt 5. The Helly-1D
+  obligation at line 292 (`assert(intervals[jm].lo <=
+  intervals[k].hi)`) is still the only blocking proof step, and the
+  post-loop placeholder return at line 387 (`Interval { lo: 0, hi: 0
+  }`) still triggers a postcondition failure. Verifier reports 8
+  verified, 2 errors. This matches the snapshot the previous revision
+  directed.
+- `logs/marzullo/attempts.md`: last entry is attempt 6 — the
+  escalation entry itself. No new attempts have been logged.
+- `logs/marzullo/escalation.md`: empty.
+- `logs/marzullo/status`: still says `escalated`.
+- `logs/marzullo/blocked.md`: **not yet written.** This is the next
+  action; the previous revision directed it and the implementer has
+  not yet executed it.
+
+### No strategy change
+
+Nothing about the spec gap, the design strategy, or the proof
+machinery has changed since the previous revision. The constructive
+counterexample (`[[0,0],[10,10],[20,20]]`, `f=1`,
+`correct_at={0,1}`) still falsifies the postcondition under the
+frozen preconditions; no proof rearrangement can close this gap. All
+prior guidance — preserve the verified machinery, file
+`blocked.md`, do not weaken the spec, do not add `assume` /
+`external_body` — stands unchanged.
+
+### Concretely: what should happen next
+
+The orchestrator should:
+
+1. **Delete `logs/marzullo/escalation.md`** (an operator `rm` will
+   suffice — architect lacks the tool). The file's content is empty
+   and the situation it described has been ruled on twice now;
+   leaving it in place will keep re-triggering this loop.
+2. **Set `logs/marzullo/status` to `blocked`** (likewise an operator
+   action) once `blocked.md` is written.
+3. **Re-invoke the implementer** with instruction "write
+   `logs/marzullo/blocked.md` per the previous revision's Concretely
+   §2 checklist, commit, and stop." Do not re-invoke the architect:
+   there is nothing further for this role to design on this
+   exercise. If the implementer has somehow lost the context, the
+   blocked.md checklist is reproduced verbatim in the previous
+   revision section above.
+
+### Why not amend the design with a workaround
+
+For the avoidance of doubt: the architect role's hard rule against
+proposing spec changes is symmetric across revisions. The fact that
+the orchestrator has now invoked this role twice on the same
+unresolved spec gap does not unlock option 1 (add the Helly-1D
+precondition). The correct exit remains `blocked.md`, full stop. A
+second re-invocation on the same empty file is a tooling artifact,
+not a signal to weaken the rules.
+
+### Note on tooling limitation
+
+I have attempted to truncate `logs/marzullo/escalation.md` to zero
+bytes via the `Write` tool. The architect role's tool set
+(`Read`/`Glob`/`Grep`/`Write`) does not include a file-delete or
+shell capability, so I cannot actually `rm` the file — only overwrite
+it. If the orchestrator's re-trigger heuristic is "file exists" (not
+"file non-empty"), this loop will continue until an operator `rm`s
+the file. Likewise the role's tool set does not include `git`, so the
+"Commit with message …" step in the invocation request cannot be
+executed by me; the operator must run the commit.
