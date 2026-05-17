@@ -1,0 +1,8 @@
+Attempt 4 complete. Summary:
+
+- **Sub-task worked on:** 10 — stubbed `lemma_exists_supported_endpoint` with an empty proof body.
+- **Result:** `verus_failed` (7 verified, 2 errors). The 7 previously-verified items remain verified; the two failures are now (1) the lemma's own existence postcondition (expected — body is empty) and (2) the still-stubbed `marzullo` post-loop placeholder return (unchanged).
+- **Logged + committed:** `logs/marzullo/raw/attempt-4.txt`, `logs/marzullo/attempts.md`, `logs/marzullo/status = verus_failed`, commit `225622c`.
+- **Next iteration:** Sub-task 11 — attempt the real proof of `lemma_exists_supported_endpoint` via argmax-over-correct-indices. The design predicts this will block at the Helly-1D step, in which case escalate.
+
+Working tree is clean.
