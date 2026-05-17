@@ -222,9 +222,55 @@ pub fn marzullo(intervals: &Vec<Interval>, f: u32) -> (result: Interval)
             result.lo <= p && p <= result.hi
                 && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat,
 {
-    // TODO(loop): fill in. Do not modify any spec above.
-    // Stub for sub-task 1 — confirms file parses; verification of the
-    // postcondition is expected to fail at this stage.
+    // Overflow safety: 2*f + 1 <= len <= u32::MAX ⇒ f + 1 fits in u32.
+    assert(f as nat + 1 <= u32::MAX as nat) by {
+        assert(2 * (f as nat) + 1 <= u32::MAX as nat);
+    }
+    let n: usize = intervals.len();
+    // n fits in u32 by the precondition. n - f >= f + 1 >= 1 in nat, so the
+    // u32 subtraction is safe.
+    let n_u32: u32 = n as u32;
+    assert(n_u32 as nat == n as nat);
+    assert(n_u32 as nat >= f as nat + 1);
+    let threshold: u32 = n_u32 - f;
+    let mut i: usize = 0;
+    while i < n
+        invariant
+            0 <= i as int <= n as int,
+            n == intervals@.len(),
+            threshold as nat == n as nat - f as nat,
+            intervals.len() <= u32::MAX as nat,
+            intervals.len() as nat >= 2 * (f as nat) + 1,
+            well_formed(intervals@),
+            correct_indices(intervals.len() as nat).len()
+                >= intervals.len() as nat - f as nat,
+            forall|j2: int| 0 <= j2 < i as int ==>
+                intervals_containing(intervals@, #[trigger] intervals@[j2].lo).len()
+                    < intervals.len() as nat - f as nat,
+        decreases n - i,
+    {
+        let p: Reading = intervals[i].lo;
+        let c: u32 = count_containing(intervals, p);
+        if c >= threshold {
+            proof {
+                assert(intervals_containing(intervals@, p).len()
+                    >= intervals.len() as nat - f as nat);
+            }
+            return Interval { lo: p, hi: p };
+        }
+        proof {
+            // Maintain the strengthened invariant at j2 = i.
+            assert(c < threshold);
+            assert(p == intervals@[i as int].lo);
+            assert(c as nat == intervals_containing(intervals@, p).len());
+            assert(intervals_containing(intervals@, intervals@[i as int].lo).len()
+                < intervals.len() as nat - f as nat);
+        }
+        i = i + 1;
+    }
+    // Post-loop: provably unreachable once lemma_exists_supported_endpoint is
+    // wired (sub-tasks 10–12). For now, return a placeholder; verification of
+    // the postcondition is expected to fail at this stage.
     Interval { lo: 0, hi: 0 }
 }
 
