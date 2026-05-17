@@ -10,6 +10,7 @@ EXERCISES=(
   exercises/quorum_count.rs
   exercises/quorum_cert.rs
   exercises/ft_midpoint.rs
+  exercises/marzullo.rs
 )
 
 fail=0

@@ -37,7 +37,8 @@ progress.
 | bounded_log      | DONE   | 1 (post re-freeze) | Surfaced a Verus version mismatch in the operator-authored frozen spec; the reviewer's REJECT was the methodology working as intended. |
 | quorum_count     | DONE   | 2                  | Concrete-to-abstract proof bridge; implementer grepped local `vstd` and wrote a recursive cardinality lemma. |
 | quorum_cert      | DONE   | 6                  | First BFT-shaped exercise. Structural exec verification + safety lemma about honest voters. Six narrow iterations through the architect's sub-task list; surfaced the pigeonhole-via-contradiction pattern and `vstd::arithmetic::div_mod::lemma_fundamental_div_mod` for threshold arithmetic. |
-| ft_midpoint      | scaffolded | —              | First sensor-fusion exercise. Schmid-Schossmaier fault-tolerant midpoint. Single function, safety property states the result is bracketed by correct sensor readings. The interval variant (Marzullo) follows as exercise 6. |
+| ft_midpoint      | DONE   | 7                  | Schmid-Schossmaier fault-tolerant midpoint. Brute-force-scan algorithm with inclusion-exclusion pigeonhole proof; surfaced `lemma_set_intersect_union_lens` as the direct cardinality primitive and the `assert(false)` + concrete return pattern for provably-unreachable tails. |
+| marzullo         | scaffolded | —              | Interval variant of sensor fusion. Output is an `Interval` whose interior contains a point supported by ≥ n-f input intervals. Reuses ft_midpoint's proof patterns. |
 
 The full narrative lives in `writeup/blog-post.md` (publication-ready)
 and `writeup/writeup.md` (raw run record).
@@ -77,7 +78,8 @@ verus-calibration/
 │   ├── bounded_log.rs     exercise 2: frame property on append
 │   ├── quorum_count.rs    exercise 3: distinct-count vs Set::len()
 │   ├── quorum_cert.rs     exercise 4: BFT quorum certificate + safety lemma
-│   └── ft_midpoint.rs     exercise 5: sensor-fusion fault-tolerant midpoint
+│   ├── ft_midpoint.rs     exercise 5: sensor-fusion fault-tolerant midpoint
+│   └── marzullo.rs        exercise 6: Marzullo's algorithm (interval form)
 ├── .claude/agents/
 │   ├── architect.md       Opus 4.7 — design, no Edit, no Bash(verus)
 │   ├── implementer.md     Sonnet 4.6 — full toolset incl. verus

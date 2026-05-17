@@ -58,6 +58,7 @@ case "$EXERCISE" in
   quorum_count)  ATTEMPT_CAP=20 ;;
   quorum_cert)   ATTEMPT_CAP=20 ;;
   ft_midpoint)   ATTEMPT_CAP=20 ;;
+  marzullo)      ATTEMPT_CAP=20 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 
