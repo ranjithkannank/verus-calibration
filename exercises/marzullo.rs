@@ -47,6 +47,7 @@
 // The spec below is FROZEN. Iteration cap: 20. See AGENTS.md.
 
 use vstd::prelude::*;
+use vstd::set_lib::*;
 
 verus! {
 
@@ -78,6 +79,67 @@ pub open spec fn intervals_containing(intervals: Seq<Interval>, p: Reading) -> S
 
 pub open spec fn correct_indices(n: nat) -> Set<int> {
     Set::new(|i: int| 0 <= i < n as int && correct_at(i))
+}
+
+// --- Proof-only spec helpers (implementer additions) ------------------------
+
+spec fn contained_set_upto(intervals: Seq<Interval>, p: Reading, m: int) -> Set<int> {
+    Set::new(|i: int|
+        0 <= i < m && i < intervals.len() && point_in_interval(p, intervals[i]))
+}
+
+// --- Subset / finiteness lemmas ---------------------------------------------
+
+proof fn lemma_contained_set_in_range(intervals: Seq<Interval>, p: Reading)
+    ensures
+        intervals_containing(intervals, p).subset_of(set_int_range(0, intervals.len() as int)),
+        intervals_containing(intervals, p).finite(),
+        intervals_containing(intervals, p).len() <= intervals.len() as nat,
+{
+    lemma_int_range(0, intervals.len() as int);
+    assert(intervals_containing(intervals, p)
+        .subset_of(set_int_range(0, intervals.len() as int)));
+    lemma_len_subset(
+        intervals_containing(intervals, p),
+        set_int_range(0, intervals.len() as int),
+    );
+}
+
+proof fn lemma_contained_set_upto_in_range(intervals: Seq<Interval>, p: Reading, m: int)
+    requires 0 <= m <= intervals.len(),
+    ensures
+        contained_set_upto(intervals, p, m).subset_of(set_int_range(0, m)),
+        contained_set_upto(intervals, p, m).finite(),
+        contained_set_upto(intervals, p, m).len() <= m as nat,
+{
+    lemma_int_range(0, m);
+    assert(contained_set_upto(intervals, p, m).subset_of(set_int_range(0, m)));
+    lemma_len_subset(contained_set_upto(intervals, p, m), set_int_range(0, m));
+}
+
+proof fn lemma_correct_indices_in_range(n: nat)
+    ensures
+        correct_indices(n).subset_of(set_int_range(0, n as int)),
+        correct_indices(n).finite(),
+        correct_indices(n).len() <= n,
+{
+    lemma_int_range(0, n as int);
+    assert(correct_indices(n).subset_of(set_int_range(0, n as int)));
+    lemma_len_subset(correct_indices(n), set_int_range(0, n as int));
+}
+
+// --- Prefix-set extension lemma --------------------------------------------
+
+proof fn lemma_contained_set_upto_extend(intervals: Seq<Interval>, p: Reading, i: int)
+    requires 0 <= i < intervals.len(),
+    ensures
+        point_in_interval(p, intervals[i]) ==>
+            contained_set_upto(intervals, p, i + 1)
+                =~= contained_set_upto(intervals, p, i).insert(i),
+        !point_in_interval(p, intervals[i]) ==>
+            contained_set_upto(intervals, p, i + 1)
+                =~= contained_set_upto(intervals, p, i),
+{
 }
 
 // --- The exec entry point ---------------------------------------------------
@@ -116,7 +178,9 @@ pub fn marzullo(intervals: &Vec<Interval>, f: u32) -> (result: Interval)
                 && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat,
 {
     // TODO(loop): fill in. Do not modify any spec above.
-    unimplemented!()
+    // Stub for sub-task 1 — confirms file parses; verification of the
+    // postcondition is expected to fail at this stage.
+    Interval { lo: 0, hi: 0 }
 }
 
 } // verus!
