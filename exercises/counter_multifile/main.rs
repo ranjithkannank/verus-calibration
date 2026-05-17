@@ -23,7 +23,20 @@ pub fn count_up_to(target: u32) -> (final_count: u32)
     ensures
         final_count == target,
 {
-    unimplemented!()
+    let mut c = counter::Counter::new(target);
+    let mut i: u32 = 0;
+    while i < target
+        invariant
+            c.invariant(),
+            c.value() == i,
+            c.bound() == target,
+            i <= target,
+        decreases target - i,
+    {
+        c.incr();
+        i = i + 1;
+    }
+    c.get()
 }
 
 } // verus!
