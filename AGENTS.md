@@ -49,6 +49,19 @@ that the verified code calls. A real deployment connects them to a
 vetted external library via an `assume_specification` outside this
 repo; here that connection is out of scope.
 
+## Pre-spec verification (operator)
+
+Before tagging `spec-frozen-<name>` for a new exercise, write a *witness* file at `exercises/<name>_witness.rs`. The witness has the same `requires`/`ensures` clauses (and the same `open spec fn` / `uninterp spec fn` definitions) as the exercise file, plus a real reference implementation. Run `ralph/check-spec.sh <name>`. If it passes (verus verifies the witness with no cheat tokens), the spec provably admits a model and the operator may tag the freeze. If it fails, the spec is unprovable or under-constrained — fix the spec, not the witness.
+
+This catches two classes of bug the agent loop cannot:
+
+1. **Logically unprovable specs.** The original marzullo freeze omitted the Helly-1D precondition `correct_intervals_overlap`. No algorithm can verify against the postcondition without it. The agent burned attempts 5–7 surfacing this via constructive counterexample before the operator re-froze. A witness would have failed at step 0.
+2. **Spec syntax that no longer compiles.** The original bounded_log freeze used pre-`final(self)` syntax that newer Verus rejects. A witness would have failed `verus` immediately.
+
+The witness is operator territory. The agent's tool whitelist does not name `*_witness.rs`; the agent never sees or modifies these files. The pre-commit hook still applies cheat-token detection to them.
+
+Empirical demonstration: `scripts/test-witness-catches-bad-spec.sh` strips the Helly-1D precondition from a copy of the marzullo witness and confirms verus rejects it.
+
 ## On SMT timeouts
 
 Do not just raise the rlimit. First:
