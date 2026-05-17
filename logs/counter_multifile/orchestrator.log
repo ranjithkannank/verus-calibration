@@ -9,3 +9,9 @@
 
   > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
   > log: logs/counter_multifile/ralph/iter-1-work.log
+  > exit: 0  (head of log:)
+      Done — verus exited 0 on the first attempt.
+      
+      ## Summary
+      
+      **Sub-task:** All three sub-tasks (1: `counter.rs` exec bodies, 2: `main.rs` client body, 3: end-to-end verify) completed in one attempt. Direct port from the verified `cross_module_counter.rs`.

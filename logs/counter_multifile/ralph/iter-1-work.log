@@ -1,0 +1,17 @@
+Done — verus exited 0 on the first attempt.
+
+## Summary
+
+**Sub-task:** All three sub-tasks (1: `counter.rs` exec bodies, 2: `main.rs` client body, 3: end-to-end verify) completed in one attempt. Direct port from the verified `cross_module_counter.rs`.
+
+**Edits:**
+- `exercises/counter_multifile/counter.rs`: filled `Counter::new` (struct literal), `Counter::incr` (`self.value += 1`), `Counter::get` (returns `self.value`).
+- `exercises/counter_multifile/main.rs`: filled `count_up_to` with `counter::Counter::new(target)` + `while i < target` loop using the four-conjunct invariant (`c.invariant()`, `c.value() == i`, `c.bound() == target`, `i <= target`), `decreases target - i`, returning `c.get()`.
+
+**Verifier output:** `verification results:: 5 verified, 0 errors`
+
+**Status:** `verus_passed`. Commit `e7b4991` pushed to local branch. The remaining unstaged change in `logs/cross_module_counter/orchestrator.log` is from a prior exercise outside this scope.
+
+I also appended a discovered-patterns note to `AGENTS.md` documenting that the multi-file tooling regime (sibling-file `mod` declaration + `verus main.rs --crate-type=lib`) generalises trivially from the single-file nested-`mod` case, with `closed spec fn` visibility preserved across files.
+
+Handing back to the orchestrator for reviewer audit.
