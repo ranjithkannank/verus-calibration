@@ -1,0 +1,8 @@
+Attempt 1 complete.
+
+**Summary:**
+- Worked on sub-tasks 1–7 from the design (spec helpers, L1 via vstd, L2 subset/finiteness lemmas, L3 prefix-extension lemmas, `count_le`, `count_ge`).
+- Result: **11 items verified, 1 error** — only the `ft_midpoint` stub fails its postcondition (returning `readings[0]` doesn't satisfy `some_correct_le/ge`, as expected).
+- Status: `verus_failed`. Clean tree.
+
+Next attempt should land the L4 pigeonhole lemmas and the main `while` loop with the in-loop early return, deferring the L6 existence lemma (post-loop fall-through) to a later attempt.
