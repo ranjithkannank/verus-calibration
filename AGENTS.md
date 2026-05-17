@@ -66,6 +66,7 @@ Work in this order. Do not start the next exercise until the previous one is eit
 2. `exercises/bounded_log.rs`
 3. `exercises/quorum_count.rs`
 4. `exercises/quorum_cert.rs` — first step on the BFT-for-aerospace path. Two obligations: an exec structural check, and a proof-only safety lemma about honest voters.
+5. `exercises/ft_midpoint.rs` — first sensor-fusion exercise. Verified Schmid-Schossmaier fault-tolerant midpoint over `n >= 2f+1` readings with at most `f` Byzantine. One obligation: an exec function whose result is bracketed by correct sensor readings on each side. Single-round, single-value variant; the interval variant (Marzullo) is the next exercise.
 
 ## Multi-agent workflow (brief)
 

@@ -53,11 +53,13 @@ check "exercise: binary_search"      "test -f exercises/binary_search.rs"
 check "exercise: bounded_log"        "test -f exercises/bounded_log.rs"
 check "exercise: quorum_count"       "test -f exercises/quorum_count.rs"
 check "exercise: quorum_cert"        "test -f exercises/quorum_cert.rs"
+check "exercise: ft_midpoint"        "test -f exercises/ft_midpoint.rs"
 check "verify.sh executable"         "test -x scripts/verify.sh"
 check "logs dir: binary_search"      "test -d logs/binary_search"
 check "logs dir: bounded_log"        "test -d logs/bounded_log"
 check "logs dir: quorum_count"       "test -d logs/quorum_count"
 check "logs dir: quorum_cert"        "test -d logs/quorum_cert"
+check "logs dir: ft_midpoint"        "test -d logs/ft_midpoint"
 check "writeup/outline.md present"   "test -f writeup/outline.md"
 check "writeup/results_template.md"  "test -f writeup/results_template.md"
 
@@ -76,6 +78,7 @@ check "tag: spec-frozen-binary_search" "git rev-parse --verify --quiet spec-froz
 check "tag: spec-frozen-bounded_log"   "git rev-parse --verify --quiet spec-frozen-bounded_log"
 check "tag: spec-frozen-quorum_count"  "git rev-parse --verify --quiet spec-frozen-quorum_count"
 check "tag: spec-frozen-quorum_cert"   "git rev-parse --verify --quiet spec-frozen-quorum_cert"
+check "tag: spec-frozen-ft_midpoint"   "git rev-parse --verify --quiet spec-frozen-ft_midpoint"
 
 echo
 echo "Sandbox boundary (pre-commit hook):"

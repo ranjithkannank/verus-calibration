@@ -9,6 +9,7 @@ EXERCISES=(
   exercises/bounded_log.rs
   exercises/quorum_count.rs
   exercises/quorum_cert.rs
+  exercises/ft_midpoint.rs
 )
 
 fail=0
