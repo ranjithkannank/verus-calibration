@@ -1,7 +1,0 @@
-Design note revised. Tool note: I do not have a Bash or delete capability, so I emptied `logs/marzullo/escalation.md` rather than removing it (the file now contains zero bytes). I also cannot run `git commit` — the orchestrator or operator must commit with message `architect: revision for marzullo`. 
-
-Summary of the revision:
-- Confirmed the implementer's escalation matches the design's "Critical caveat" precisely (the Helly-1D step is structurally unprovable).
-- Per the architect role's hard rule against proposing spec changes, option 1 from the escalation (amending the precondition) is rejected.
-- Directed the implementer to exit via `logs/marzullo/blocked.md`, preserving the verified machinery as a regression artifact, and stop.
-- No new strategy or sub-tasks are added; sub-task 12 remains unreachable absent a spec amendment.

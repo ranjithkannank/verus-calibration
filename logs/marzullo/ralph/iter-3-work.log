@@ -1,8 +1,0 @@
-Attempt 2 complete.
-
-**Summary:**
-- **Sub-task worked on:** 6 — `count_containing` exec helper.
-- **Approach:** Direct adaptation of `count_le` from `ft_midpoint`: same prefix-set loop invariant, same per-iteration `lemma_contained_set_upto_extend` / `lemma_contained_set_upto_in_range` calls, same post-loop `=~=` bridge to `intervals_containing`.
-- **Verifier:** EXIT=1, **6 verified / 1 errors** (was 4/1). `count_containing` verified cleanly. The remaining failure is exactly the expected stubbed `marzullo` postcondition.
-- **Status:** `verus_failed` — committed as `1ae665d`. The orchestrator will drive the next iteration (sub-tasks 7–9: main loop skeleton).
-- **Working tree:** Clean except for `logs/marzullo/ralph/iter-3-work.log` (orchestrator artifact, untracked, not part of this attempt).

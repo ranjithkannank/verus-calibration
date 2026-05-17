@@ -17,6 +17,21 @@
 // agreement primitive used in NTP, Cristian's clock sync, and several
 // avionics designs.
 //
+// NOTE (operator intervention 2026-05-16): the original frozen spec
+// omitted the Helly-1D precondition `correct_intervals_overlap`. The
+// implementer proved (with a constructive counterexample at attempt
+// 5-7) that the postcondition was logically unprovable without it:
+// three "correct" sensors are allowed to report disjoint singleton
+// intervals like [[0,0], [10,10], [20,20]], for which no point lies
+// in >= n-f input intervals, so the existential postcondition cannot
+// be satisfied. The methodology held — the architect re-confirmed the
+// diagnosis through three revisions and the implementer wrote a
+// detailed blocker report rather than weakening the spec. The
+// operator re-froze the spec to add the missing precondition. The
+// prior tag's `logs/marzullo/blocked.md` (preserved in git history)
+// has the full constructive counterexample. The
+// `spec-frozen-marzullo` tag has been force-moved to this commit.
+//
 // What the spec says:
 //
 //   - `intervals: Vec<Interval>` is the input. Each `Interval` has
@@ -26,6 +41,11 @@
 //   - `correct_at(i)` is an uninterpreted per-index predicate
 //     designating correct sensors. The implementer cannot provide a
 //     body. Precondition: at least `n - f` indices are correct.
+//   - `correct_intervals_overlap(intervals@)`: all correct sensors'
+//     intervals share at least one common point (the Helly-1D
+//     condition). This is the canonical sensor-fusion assumption
+//     that all honest sensors are reporting bounds around some shared
+//     true value.
 //   - The output is an `Interval` with `result.lo <= result.hi`.
 //   - The safety property: there exists a point `p` in `[result.lo,
 //     result.hi]` such that at least `n - f` input intervals contain
@@ -34,20 +54,9 @@
 //     is "supported" — any caller can trust that some correct sensor
 //     would have reported a value covering this region.
 //
-// Why this safety property:
-//
-//   The strict Marzullo safety guarantee is "the output region is
-//   the maximum-overlap region." We use a slightly weaker form that
-//   captures the operationally useful property (the output is
-//   supported by enough sensors that at least one must be honest)
-//   without requiring the implementer to prove maximality. A
-//   maximality-strengthening variant is a natural follow-up
-//   exercise if the basic safety lands cleanly.
-//
 // The spec below is FROZEN. Iteration cap: 20. See AGENTS.md.
 
 use vstd::prelude::*;
-use vstd::set_lib::*;
 
 verus! {
 
@@ -81,223 +90,15 @@ pub open spec fn correct_indices(n: nat) -> Set<int> {
     Set::new(|i: int| 0 <= i < n as int && correct_at(i))
 }
 
-// --- Proof-only spec helpers (implementer additions) ------------------------
-
-spec fn contained_set_upto(intervals: Seq<Interval>, p: Reading, m: int) -> Set<int> {
-    Set::new(|i: int|
-        0 <= i < m && i < intervals.len() && point_in_interval(p, intervals[i]))
-}
-
-// --- Subset / finiteness lemmas ---------------------------------------------
-
-proof fn lemma_contained_set_in_range(intervals: Seq<Interval>, p: Reading)
-    ensures
-        intervals_containing(intervals, p).subset_of(set_int_range(0, intervals.len() as int)),
-        intervals_containing(intervals, p).finite(),
-        intervals_containing(intervals, p).len() <= intervals.len() as nat,
-{
-    lemma_int_range(0, intervals.len() as int);
-    assert(intervals_containing(intervals, p)
-        .subset_of(set_int_range(0, intervals.len() as int)));
-    lemma_len_subset(
-        intervals_containing(intervals, p),
-        set_int_range(0, intervals.len() as int),
-    );
-}
-
-proof fn lemma_contained_set_upto_in_range(intervals: Seq<Interval>, p: Reading, m: int)
-    requires 0 <= m <= intervals.len(),
-    ensures
-        contained_set_upto(intervals, p, m).subset_of(set_int_range(0, m)),
-        contained_set_upto(intervals, p, m).finite(),
-        contained_set_upto(intervals, p, m).len() <= m as nat,
-{
-    lemma_int_range(0, m);
-    assert(contained_set_upto(intervals, p, m).subset_of(set_int_range(0, m)));
-    lemma_len_subset(contained_set_upto(intervals, p, m), set_int_range(0, m));
-}
-
-proof fn lemma_correct_indices_in_range(n: nat)
-    ensures
-        correct_indices(n).subset_of(set_int_range(0, n as int)),
-        correct_indices(n).finite(),
-        correct_indices(n).len() <= n,
-{
-    lemma_int_range(0, n as int);
-    assert(correct_indices(n).subset_of(set_int_range(0, n as int)));
-    lemma_len_subset(correct_indices(n), set_int_range(0, n as int));
-}
-
-// --- Prefix-set extension lemma --------------------------------------------
-
-proof fn lemma_contained_set_upto_extend(intervals: Seq<Interval>, p: Reading, i: int)
-    requires 0 <= i < intervals.len(),
-    ensures
-        point_in_interval(p, intervals[i]) ==>
-            contained_set_upto(intervals, p, i + 1)
-                =~= contained_set_upto(intervals, p, i).insert(i),
-        !point_in_interval(p, intervals[i]) ==>
-            contained_set_upto(intervals, p, i + 1)
-                =~= contained_set_upto(intervals, p, i),
-{
-}
-
-// --- Counting helper --------------------------------------------------------
-
-fn count_containing(intervals: &Vec<Interval>, p: Reading) -> (c: u32)
-    requires
-        intervals.len() <= u32::MAX as nat,
-    ensures
-        c as nat == intervals_containing(intervals@, p).len(),
-        intervals_containing(intervals@, p).finite(),
-        c as nat <= intervals.len() as nat,
-{
-    let mut c: u32 = 0;
-    let mut i: usize = 0;
-    proof {
-        assert(contained_set_upto(intervals@, p, 0) =~= Set::<int>::empty());
-    }
-    while i < intervals.len()
-        invariant
-            0 <= i as int <= intervals@.len() as int,
-            intervals.len() <= u32::MAX as nat,
-            c as nat == contained_set_upto(intervals@, p, i as int).len(),
-            contained_set_upto(intervals@, p, i as int).finite(),
-            c as nat <= i as nat,
-        decreases intervals.len() - i,
-    {
-        let iv = &intervals[i];
-        proof {
-            lemma_contained_set_upto_extend(intervals@, p, i as int);
-            lemma_contained_set_upto_in_range(intervals@, p, (i + 1) as int);
-        }
-        if iv.lo <= p && p <= iv.hi {
-            proof {
-                assert(!contained_set_upto(intervals@, p, i as int).contains(i as int));
-            }
-            c = c + 1;
-        }
-        i = i + 1;
-    }
-    proof {
-        assert(contained_set_upto(intervals@, p, intervals@.len() as int)
-            =~= intervals_containing(intervals@, p));
-        lemma_contained_set_in_range(intervals@, p);
-    }
-    c
-}
-
-// --- Argmax over intervals[j].lo for a finite index set --------------------
-
-proof fn lemma_max_lo_in_set(s: Set<int>, intervals: Seq<Interval>) -> (jm: int)
-    requires
-        s.finite(),
-        s.len() >= 1,
-        forall|j: int| s.contains(j) ==> 0 <= j < intervals.len(),
-    ensures
-        s.contains(jm),
-        forall|j: int| s.contains(j) ==> intervals[j].lo <= intervals[jm].lo,
-    decreases s.len(),
-{
-    axiom_is_empty_len0(s);
-    axiom_is_empty(s);
-    let j0 = choose|x: int| s.contains(x);
-    assert(s.contains(j0));
-    let s2 = s.remove(j0);
-    assert(s2.finite());
-    assert(s2.len() == s.len() - 1);
-    if s2.len() == 0 {
-        assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
-            if j != j0 {
-                assert(s2.contains(j));
-                axiom_is_empty_len0(s2);
-                axiom_is_empty(s2);
-            }
-        }
-        j0
-    } else {
-        let jm2 = lemma_max_lo_in_set(s2, intervals);
-        if intervals[j0].lo >= intervals[jm2].lo {
-            assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
-                if j != j0 {
-                    assert(s2.contains(j));
-                }
-            }
-            j0
-        } else {
-            assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[jm2].lo by {
-                if j != j0 {
-                    assert(s2.contains(j));
-                }
-            }
-            jm2
-        }
-    }
-}
-
-// --- Existence lemma (load-bearing; sub-task 11) ----------------------------
-//
-// Claims that some input-`lo` endpoint is contained in at least n - f
-// intervals. The natural proof is argmax-over-correct-indices + Helly-1D,
-// but the frozen spec lacks the Helly precondition; see design.md
-// "Critical caveat".
-
-proof fn lemma_exists_supported_endpoint(intervals: Seq<Interval>, f: nat)
-    requires
-        intervals.len() >= 2 * f + 1,
-        well_formed(intervals),
-        correct_indices(intervals.len()).len() >= intervals.len() - f,
-    ensures
-        exists|j: int|
-            0 <= j < intervals.len()
-            && intervals_containing(intervals, #[trigger] intervals[j].lo).len()
-               >= intervals.len() - f,
-{
-    let n: nat = intervals.len();
-    let ci: Set<int> = correct_indices(n);
-
-    // Setup: correct_indices is finite and lies in [0, n).
-    lemma_correct_indices_in_range(n);
-    assert(ci.finite());
-    assert(ci.len() >= n - f);
-    // n >= 2f + 1 ⇒ n - f >= f + 1 >= 1.
-    assert(ci.len() >= 1);
-
-    // All elements of ci lie in [0, n).
-    assert forall|j: int| ci.contains(j) implies 0 <= j < intervals.len() by {}
-
-    // Argmax over correct indices: pick the j whose intervals[j].lo is largest.
-    let jm = lemma_max_lo_in_set(ci, intervals);
-    assert(ci.contains(jm));
-    assert(0 <= jm < intervals.len());
-
-    // Claim: every correct k is in intervals_containing(intervals, intervals[jm].lo).
-    // This requires:
-    //   (a) intervals[k].lo <= intervals[jm].lo (argmax property — closes).
-    //   (b) intervals[jm].lo <= intervals[k].hi (Helly-1D — NOT in the spec).
-    //
-    // Step (b) is the load-bearing claim that should not close: nothing in the
-    // frozen spec ties two correct intervals together.
-    lemma_contained_set_in_range(intervals, intervals[jm].lo);
-    assert(ci.subset_of(intervals_containing(intervals, intervals[jm].lo))) by {
-        assert forall|k: int| ci.contains(k)
-            implies intervals_containing(intervals, intervals[jm].lo).contains(k) by {
-            // From ci.contains(k): 0 <= k < n and correct_at(k).
-            assert(0 <= k < intervals.len());
-            // Argmax: intervals[k].lo <= intervals[jm].lo.
-            assert(intervals[k].lo <= intervals[jm].lo);
-            // Helly-1D (the gap): intervals[jm].lo <= intervals[k].hi.
-            // The frozen spec only gives well_formed (intervals[k].lo <= intervals[k].hi)
-            // and the count of correct indices; nothing links correct intervals.
-            assert(intervals[jm].lo <= intervals[k].hi);
-            // Combined: point_in_interval(intervals[jm].lo, intervals[k]).
-        }
-    }
-    lemma_len_subset(ci, intervals_containing(intervals, intervals[jm].lo));
-    // Therefore |intervals_containing| >= |ci| >= n - f.
-    assert(intervals_containing(intervals, intervals[jm].lo).len() >= n - f);
-    // Existence witness.
-    assert(0 <= jm < intervals.len());
+// Helly-1D condition: every pair of correct intervals overlaps. Equivalent
+// (in one dimension) to "all correct intervals share at least one common
+// point." This is the missing precondition the original spec elided; the
+// algorithm's safety guarantee depends on it.
+pub open spec fn correct_intervals_overlap(intervals: Seq<Interval>) -> bool {
+    forall|i: int, j: int|
+        0 <= i < intervals.len() && 0 <= j < intervals.len()
+        && correct_at(i) && correct_at(j)
+            ==> intervals[i].lo <= intervals[j].hi
 }
 
 // --- The exec entry point ---------------------------------------------------
@@ -310,18 +111,22 @@ proof fn lemma_exists_supported_endpoint(intervals: Seq<Interval>, f: nat)
 // and avoids interval-sweep state-machine complexity. Each candidate
 // (lo, hi) with lo <= hi has a well-defined count of input intervals
 // containing it; pick any candidate whose count is at least n - f and
-// return it as the output. Existence is guaranteed: the intersection of
-// the n - f correct intervals (which all overlap, since they all
-// contain any "true" value) has count >= n - f at every point inside
-// it. The brute-force scan over input endpoints is guaranteed to find
-// at least one such candidate by the pigeonhole on correct intervals.
+// return it as the output. Existence is guaranteed by the pigeonhole
+// argument combined with the Helly-1D precondition: the n - f correct
+// intervals all overlap (by `correct_intervals_overlap`), so any point
+// in their common intersection has count >= n - f.
 //
-// Reusable patterns from ft_midpoint:
+// Reusable patterns from ft_midpoint and the prior (blocked) marzullo
+// run:
 //   - finite-universe bridge via `lemma_int_range` + `lemma_len_subset`
 //     for any `Set::new(|i| ...).len()` reasoning
 //   - inclusion-exclusion pigeonhole via `lemma_set_intersect_union_lens`
 //   - `assert(false)` + concrete return for any provably-unreachable
 //     fallback at the end of the search
+//   - the Helly-1D precondition closes the missing step in the
+//     argmax/argmin-based existence lemma: `intervals[jm].lo <= intervals[k].hi`
+//     follows directly from `correct_intervals_overlap(intervals@)` when
+//     both jm and k are in `correct_indices`.
 
 pub fn marzullo(intervals: &Vec<Interval>, f: u32) -> (result: Interval)
     requires
@@ -329,62 +134,15 @@ pub fn marzullo(intervals: &Vec<Interval>, f: u32) -> (result: Interval)
         intervals.len() as nat >= 2 * (f as nat) + 1,
         well_formed(intervals@),
         correct_indices(intervals.len() as nat).len() >= intervals.len() as nat - f as nat,
+        correct_intervals_overlap(intervals@),
     ensures
         result.lo <= result.hi,
         exists|p: Reading|
             result.lo <= p && p <= result.hi
                 && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat,
 {
-    // Overflow safety: 2*f + 1 <= len <= u32::MAX ⇒ f + 1 fits in u32.
-    assert(f as nat + 1 <= u32::MAX as nat) by {
-        assert(2 * (f as nat) + 1 <= u32::MAX as nat);
-    }
-    let n: usize = intervals.len();
-    // n fits in u32 by the precondition. n - f >= f + 1 >= 1 in nat, so the
-    // u32 subtraction is safe.
-    let n_u32: u32 = n as u32;
-    assert(n_u32 as nat == n as nat);
-    assert(n_u32 as nat >= f as nat + 1);
-    let threshold: u32 = n_u32 - f;
-    let mut i: usize = 0;
-    while i < n
-        invariant
-            0 <= i as int <= n as int,
-            n == intervals@.len(),
-            threshold as nat == n as nat - f as nat,
-            intervals.len() <= u32::MAX as nat,
-            intervals.len() as nat >= 2 * (f as nat) + 1,
-            well_formed(intervals@),
-            correct_indices(intervals.len() as nat).len()
-                >= intervals.len() as nat - f as nat,
-            forall|j2: int| 0 <= j2 < i as int ==>
-                intervals_containing(intervals@, #[trigger] intervals@[j2].lo).len()
-                    < intervals.len() as nat - f as nat,
-        decreases n - i,
-    {
-        let p: Reading = intervals[i].lo;
-        let c: u32 = count_containing(intervals, p);
-        if c >= threshold {
-            proof {
-                assert(intervals_containing(intervals@, p).len()
-                    >= intervals.len() as nat - f as nat);
-            }
-            return Interval { lo: p, hi: p };
-        }
-        proof {
-            // Maintain the strengthened invariant at j2 = i.
-            assert(c < threshold);
-            assert(p == intervals@[i as int].lo);
-            assert(c as nat == intervals_containing(intervals@, p).len());
-            assert(intervals_containing(intervals@, intervals@[i as int].lo).len()
-                < intervals.len() as nat - f as nat);
-        }
-        i = i + 1;
-    }
-    // Post-loop: provably unreachable once lemma_exists_supported_endpoint is
-    // wired (sub-tasks 10–12). For now, return a placeholder; verification of
-    // the postcondition is expected to fail at this stage.
-    Interval { lo: 0, hi: 0 }
+    // TODO(loop): fill in. Do not modify any spec above.
+    unimplemented!()
 }
 
 } // verus!

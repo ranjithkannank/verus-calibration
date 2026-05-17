@@ -1,6 +1,0 @@
-Attempt 1 done. Summary:
-
-- **Sub-tasks completed:** 1 (stub marzullo), 2 (add `contained_set_upto` spec helper), 3-5 (three structural / extend lemmas; plus a bonus `lemma_correct_indices_in_range` for downstream use).
-- **Verifier result:** EXIT=1, 4 verified / 1 error. All four lemmas verified cleanly. The single failure is the expected `marzullo` postcondition on the stub `Interval { lo: 0, hi: 0 }` body.
-- **Status:** `verus_failed`. Logged, committed, tree clean.
-- **Next attempt's target:** Sub-task 6 — implement `count_containing` with its prefix-set loop invariant, mirroring `count_le` from ft_midpoint.
