@@ -1,0 +1,18 @@
+The design note is written at `exercises/ft_midpoint.design.md`.
+
+A note on the commit: my tool set is `Read, Glob, Grep, Write` only — there is no shell/Bash access, so I cannot invoke `git commit` myself. The artifact is in place; the operator (or orchestrator) needs to run:
+
+```
+git add exercises/ft_midpoint.design.md
+git commit -m "architect: design for ft_midpoint"
+```
+
+Summary of what the note prescribes:
+
+- **Algorithm**: brute-force O(n²) — for each `j`, count `<= readings[j]` and `>= readings[j]`; return the first `v` where both counts hit `f + 1`.
+- **Counts as `Set<int>` cardinalities** (not recursive `Seq` counts), so the pigeonhole step is a single inclusion-exclusion identity.
+- **Eight predicted helper lemmas**: range finiteness (L1), three subset bounds (L2), two count-loop extensions (L3), two pigeonhole safety lemmas (L4), argmax + argmin over a finite index set (L5), and one existence lemma by contradiction-on-Lo/Hi (L6).
+- **Main loop**: invariant carries "no earlier `j2` worked"; the post-loop unreachable closes via `lemma_exists_midpoint` + `assert(false)`.
+- **15-step sub-task list** ordered so the in-loop case lands well before the existence-via-argmax proof.
+
+Stopping.
