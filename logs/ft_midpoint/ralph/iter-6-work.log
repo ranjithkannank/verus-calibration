@@ -1,0 +1,7 @@
+Attempt 5 complete.
+
+**Summary:**
+- Sub-task tackled: #12 — landed `lemma_min_reading_in_set` (the mirror of `lemma_max_reading_in_set`).
+- Verifier result: **16 verified, 1 error** (was 15 verified). The new lemma verified standalone; the only remaining failure is the unchanged post-loop `readings[0]` placeholder, awaiting L6 (`lemma_exists_midpoint`) in sub-task 13.
+- Status: `verus_failed` (will iterate). Logged, raw output saved, committed as `9d16192`.
+- The untracked `ralph/iter-6-work.log` is orchestrator territory, not mine to touch.
