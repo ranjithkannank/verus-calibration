@@ -137,3 +137,21 @@ error: postcondition not satisfied
 ```
 
 **Next idea:** Escalated. Orchestrator should re-invoke the architect to either (a) add the missing `correct_intervals_overlap` Helly-1D precondition to the frozen `marzullo` spec, or (b) mark the exercise blocked-by-spec-gap. The verified-up-to-the-Helly-step machinery (`count_containing`, `lemma_max_lo_in_set`, structural subset/finiteness lemmas, the main loop's trigger-aligned invariant) remains intact and would close immediately once the precondition is in place. Full analysis in `logs/marzullo/escalation.md`.
+
+## Attempt 7 — 2026-05-16
+**Sub-tasks worked on:** Blocked-by-spec-gap exit (no code changes). Wrote `logs/marzullo/blocked.md` per the architect design's third revision (`20260517T045216Z` §"Loop-break recommendation to the operator") and the prior revision's (`20260517T044650Z` §"Concretely: what the implementer should do next") item-2 checklist.
+
+**Approach:** The architect has now reviewed the spec gap three times (revisions `20260517T044650Z`, `20260517T044911Z`, `20260517T045216Z`) and each revision has explicitly directed `blocked.md` to be written rather than re-designing. Per the implementer prompt's "If you find yourself wanting to do any of these [weaken spec / add assume / external_body], stop and write `logs/<exercise>/blocked.md` explaining why," and per AGENTS.md hard rule #4 ("Never weaken a spec to make verification pass"), this is the correct exit path. I have a constructive counterexample (`[[0,0],[10,10],[20,20]]`, `f=1`, `correct_at={0,1}`) that proves the postcondition unsatisfiable under a satisfying assignment of the preconditions, so no algorithmic or proof-search variant can succeed.
+
+The `blocked.md` captures: (a) the structural gap (no premise links `correct_at` to interval geometry), (b) the concrete counterexample, (c) the single failing verus line and obligation, (d) the suggested `correct_intervals_overlap` Helly-1D amendment as documentation only (not a request to apply), (e) the full list of verified machinery that would survive an amendment, and (f) the explicit rejection list of forbidden alternatives. `escalation.md` is preserved as a one-paragraph pointer to `blocked.md` so the orchestrator's "escalated" status token has a stable referent.
+
+**Verifier output:** EXIT=1. **8 verified, 2 errors** (unchanged from attempts 5/6 — no code changed). Same two failures:
+```
+error: assertion failed
+   --> exercises/marzullo.rs:292:20
+292 |             assert(intervals[jm].lo <= intervals[k].hi);
+error: postcondition not satisfied
+   --> exercises/marzullo.rs:334:9 (marzullo postcondition)
+```
+
+**Next idea:** Stop. The exercise is blocked. The partial proof (`8 verified` obligations including `count_containing`, the three in-range/finiteness lemmas, the prefix-extend lemma, `lemma_max_lo_in_set`, and the main scan loop with its trigger-aligned structural invariant) is the deliverable; `blocked.md` is the rationale. Any future un-freezing of the spec with a Helly-1D precondition (`forall|i,j| correct_at(i) && correct_at(j) ==> intervals[i].lo <= intervals[j].hi`) would close the proof in roughly one more iteration.
