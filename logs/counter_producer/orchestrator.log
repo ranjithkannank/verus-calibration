@@ -1,0 +1,11 @@
+==================================
+ Ralph loop: counter_producer
+ Attempt cap: 12
+ Outer ceiling: 20
+ Dry-run: 0
+==================================
+
+--- iteration 1  |  state=WORK  |  attempts=0/12
+
+  > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
+  > log: logs/counter_producer/ralph/iter-1-work.log

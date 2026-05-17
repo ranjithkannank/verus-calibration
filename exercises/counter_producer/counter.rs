@@ -32,7 +32,7 @@ impl Counter {
             c.value() == 0,
             c.bound() == bound,
     {
-        unimplemented!()
+        Counter { value: 0, bound: bound }
     }
 
     pub fn incr(&mut self)
@@ -44,7 +44,7 @@ impl Counter {
             final(self).value() == old(self).value() + 1,
             final(self).bound() == old(self).bound(),
     {
-        unimplemented!()
+        self.value = self.value + 1;
     }
 
     pub fn get(&self) -> (v: u32)
@@ -53,7 +53,7 @@ impl Counter {
         ensures
             v == self.value(),
     {
-        unimplemented!()
+        self.value
     }
 }
 

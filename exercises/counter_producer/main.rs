@@ -19,7 +19,9 @@ pub fn pipeline(target: u32) -> (r: u32)
     ensures
         r == target,
 {
-    unimplemented!()
+    let mut c = counter::Counter::new(target);
+    producer::produce(&mut c, target);
+    c.get()
 }
 
 } // verus!
