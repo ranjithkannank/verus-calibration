@@ -187,14 +187,60 @@ fn count_containing(intervals: &Vec<Interval>, p: Reading) -> (c: u32)
     c
 }
 
-// --- Existence lemma (load-bearing; sub-task 10 stub) -----------------------
+// --- Argmax over intervals[j].lo for a finite index set --------------------
+
+proof fn lemma_max_lo_in_set(s: Set<int>, intervals: Seq<Interval>) -> (jm: int)
+    requires
+        s.finite(),
+        s.len() >= 1,
+        forall|j: int| s.contains(j) ==> 0 <= j < intervals.len(),
+    ensures
+        s.contains(jm),
+        forall|j: int| s.contains(j) ==> intervals[j].lo <= intervals[jm].lo,
+    decreases s.len(),
+{
+    axiom_is_empty_len0(s);
+    axiom_is_empty(s);
+    let j0 = choose|x: int| s.contains(x);
+    assert(s.contains(j0));
+    let s2 = s.remove(j0);
+    assert(s2.finite());
+    assert(s2.len() == s.len() - 1);
+    if s2.len() == 0 {
+        assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+            if j != j0 {
+                assert(s2.contains(j));
+                axiom_is_empty_len0(s2);
+                axiom_is_empty(s2);
+            }
+        }
+        j0
+    } else {
+        let jm2 = lemma_max_lo_in_set(s2, intervals);
+        if intervals[j0].lo >= intervals[jm2].lo {
+            assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+                if j != j0 {
+                    assert(s2.contains(j));
+                }
+            }
+            j0
+        } else {
+            assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[jm2].lo by {
+                if j != j0 {
+                    assert(s2.contains(j));
+                }
+            }
+            jm2
+        }
+    }
+}
+
+// --- Existence lemma (load-bearing; sub-task 11) ----------------------------
 //
 // Claims that some input-`lo` endpoint is contained in at least n - f
 // intervals. The natural proof is argmax-over-correct-indices + Helly-1D,
 // but the frozen spec lacks the Helly precondition; see design.md
-// "Critical caveat". Sub-task 10 just stubs the lemma so we can see the
-// proof shape and confirm the postcondition is the only remaining failure
-// in `marzullo`.
+// "Critical caveat".
 
 proof fn lemma_exists_supported_endpoint(intervals: Seq<Interval>, f: nat)
     requires
@@ -207,6 +253,51 @@ proof fn lemma_exists_supported_endpoint(intervals: Seq<Interval>, f: nat)
             && intervals_containing(intervals, #[trigger] intervals[j].lo).len()
                >= intervals.len() - f,
 {
+    let n: nat = intervals.len();
+    let ci: Set<int> = correct_indices(n);
+
+    // Setup: correct_indices is finite and lies in [0, n).
+    lemma_correct_indices_in_range(n);
+    assert(ci.finite());
+    assert(ci.len() >= n - f);
+    // n >= 2f + 1 ⇒ n - f >= f + 1 >= 1.
+    assert(ci.len() >= 1);
+
+    // All elements of ci lie in [0, n).
+    assert forall|j: int| ci.contains(j) implies 0 <= j < intervals.len() by {}
+
+    // Argmax over correct indices: pick the j whose intervals[j].lo is largest.
+    let jm = lemma_max_lo_in_set(ci, intervals);
+    assert(ci.contains(jm));
+    assert(0 <= jm < intervals.len());
+
+    // Claim: every correct k is in intervals_containing(intervals, intervals[jm].lo).
+    // This requires:
+    //   (a) intervals[k].lo <= intervals[jm].lo (argmax property — closes).
+    //   (b) intervals[jm].lo <= intervals[k].hi (Helly-1D — NOT in the spec).
+    //
+    // Step (b) is the load-bearing claim that should not close: nothing in the
+    // frozen spec ties two correct intervals together.
+    lemma_contained_set_in_range(intervals, intervals[jm].lo);
+    assert(ci.subset_of(intervals_containing(intervals, intervals[jm].lo))) by {
+        assert forall|k: int| ci.contains(k)
+            implies intervals_containing(intervals, intervals[jm].lo).contains(k) by {
+            // From ci.contains(k): 0 <= k < n and correct_at(k).
+            assert(0 <= k < intervals.len());
+            // Argmax: intervals[k].lo <= intervals[jm].lo.
+            assert(intervals[k].lo <= intervals[jm].lo);
+            // Helly-1D (the gap): intervals[jm].lo <= intervals[k].hi.
+            // The frozen spec only gives well_formed (intervals[k].lo <= intervals[k].hi)
+            // and the count of correct indices; nothing links correct intervals.
+            assert(intervals[jm].lo <= intervals[k].hi);
+            // Combined: point_in_interval(intervals[jm].lo, intervals[k]).
+        }
+    }
+    lemma_len_subset(ci, intervals_containing(intervals, intervals[jm].lo));
+    // Therefore |intervals_containing| >= |ci| >= n - f.
+    assert(intervals_containing(intervals, intervals[jm].lo).len() >= n - f);
+    // Existence witness.
+    assert(0 <= jm < intervals.len());
 }
 
 // --- The exec entry point ---------------------------------------------------

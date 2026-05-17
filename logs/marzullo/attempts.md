@@ -97,3 +97,24 @@ error: postcondition not satisfied
 ```
 
 **Next idea:** Sub-task 11 — attempt the proof of `lemma_exists_supported_endpoint` via argmax-over-correct-indices + Helly-1D. The design predicts this will block on the Helly step (the spec lacks the `correct_at(i) && correct_at(j) ==> intervals[i].lo <= intervals[j].hi` precondition). Try the natural shape first; if three consecutive attempts on the Helly obligation fail, write `escalation.md` per the design.
+
+## Attempt 5 — 2026-05-16
+**Sub-tasks worked on:** 11 (attempt the natural argmax-over-correct-indices + Helly-1D proof of `lemma_exists_supported_endpoint`).
+
+**Approach:** Direct adaptation of ft_midpoint's `lemma_max_reading_in_set` to interval-`lo` keys:
+- Added `lemma_max_lo_in_set(s: Set<int>, intervals: Seq<Interval>) -> (jm: int)` — argmax of `intervals[j].lo` over a finite index set, by recursion on `s.len()`.
+- Replaced the empty body of `lemma_exists_supported_endpoint` with: argmax `jm` over `correct_indices(n)`, then prove `correct_indices(n).subset_of(intervals_containing(intervals, intervals[jm].lo))` by showing each correct `k` has both `intervals[k].lo <= intervals[jm].lo` (argmax property) and `intervals[jm].lo <= intervals[k].hi` (the Helly-1D step). Then `lemma_len_subset` closes `intervals_containing.len() >= correct_indices.len() >= n - f`.
+
+**Verifier output:** EXIT=1. **8 verified, 2 errors** (was 7 verified, 2 errors — so `lemma_max_lo_in_set` verified, and most of the existence lemma scaffolding verified; the single new failure is exactly the predicted Helly step):
+```
+error: assertion failed
+   --> .../marzullo.rs:292:20
+292 |             assert(intervals[jm].lo <= intervals[k].hi);
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+```
+The remaining error is still the `marzullo` postcondition (blocked on the same lemma).
+
+**Next idea:** This is attempt 1 on the Helly obligation; per the design (cap of 3 consecutive attempts on the same obligation before escalation) I have two more shots. Candidate variants to try next:
+- (Attempt 6) Argmin over `correct_indices` of `intervals[j].hi` instead of argmax of `intervals[j].lo` — but the postcondition specifically picks `intervals[j].lo` as the candidate point, so the change of pivot doesn't shift the gap; both directions need the Helly link.
+- (Attempt 7) Try to derive the Helly fact directly from the existing preconditions via a different angle (e.g., pigeonhole on the union of correct intervals against `[lo, hi]` of `intervals[jm]`) — but `correct_at` is uninterpreted with no relational hypothesis, so any such derivation must fail.
+If both variants land on the same `lo <= hi` cross-interval obligation, write `escalation.md` confirming the spec gap.
