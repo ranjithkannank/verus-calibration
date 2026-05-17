@@ -165,3 +165,43 @@ lemma — including the recursion on `decreases s.len()` and the two
 **Next idea:** Sub-task 12: land the mirror `lemma_min_reading_in_set`
 (identical skeleton, picks the index with minimum reading instead of
 maximum).
+
+## Attempt 5 — 2026-05-16
+**Sub-tasks worked on:** 12 (L5 argmin — `lemma_min_reading_in_set`). The
+post-loop `readings[0]` placeholder remains; sub-tasks 13–14 (L6 existence
+lemma + wiring into post-loop) are deferred to the next attempt.
+
+**Approach:**
+- Added `lemma_min_reading_in_set(s, readings) -> jm` as the mirror of
+  `lemma_max_reading_in_set`. Same skeleton:
+  1. Extract a witness `j0` from `s.len() >= 1` + `s.finite()` via
+     `axiom_is_empty_len0` + `axiom_is_empty`.
+  2. `s2 = s.remove(j0)`; show `s2.finite()` and `s2.len() == s.len() - 1`.
+  3. Base case `s2.len() == 0`: contradiction on `j != j0` via
+     `axiom_is_empty_len0(s2)` + `axiom_is_empty(s2)`; return `j0`.
+  4. Recursive case: get `jm2`; if `readings[j0] <= readings[jm2]`,
+     return `j0` (case-split assert forall on `j == j0`). Else return
+     `jm2`.
+
+**Verifier output:**
+```
+verification results:: 16 verified, 1 errors
+error: postcondition not satisfied
+   --> ft_midpoint.rs:434:9
+434 |         some_correct_le(readings@, result),
+        failed this postcondition
+... readings[0] at end of function body
+```
+16 verified (= attempt 4's 15 + new `lemma_min_reading_in_set`). Only
+the unchanged post-loop placeholder fails, identical to the prior
+attempt. The new lemma's recursion and case structure verified
+standalone.
+
+**Next idea:** Sub-task 13: land `lemma_exists_midpoint` using L5
+(both argmax on `Lo` and argmin on `Hi`). Builds the `Lo`/`Hi`
+partition over `[0, n)`, derives `|Lo| + |Hi| >= n >= 2f + 1`,
+case-splits on which side reaches `f + 1`, applies the argmax/argmin
+to extract a witness index `jm` with `le_set(_, readings[jm]).len() >=
+f + 1` and `ge_set(_, readings[jm]).len() >= f + 1`. Wire L6 into
+the post-loop block via a `choose` witness + `assert(false)` in a
+subsequent attempt.

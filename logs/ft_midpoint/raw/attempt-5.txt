@@ -1,0 +1,167 @@
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:475:1
+    |
+475 | pub fn ft_midpoint(readings: &Vec<Reading>, f: u32) -> (result: Reading)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:481:9
+    |
+481 |         some_correct_le(readings@, result),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+521 |     readings[0]
+    |     ----------- at the end of the function body
+
+error: postcondition not satisfied
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:482:9
+    |
+482 |         some_correct_ge(readings@, result),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+521 |     readings[0]
+    |     ----------- at the end of the function body
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:67:5
+   |
+67 | /     exists|i: int|
+68 | |         0 <= i < readings.len() && correct_at(i) && readings[i] <= v
+   | |____________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:68:36
+   |
+68 |         0 <= i < readings.len() && correct_at(i) && readings[i] <= v
+   |                                    ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:72:5
+   |
+72 | /     exists|i: int|
+73 | |         0 <= i < readings.len() && correct_at(i) && readings[i] >= v
+   | |____________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:73:36
+   |
+73 |         0 <= i < readings.len() && correct_at(i) && readings[i] >= v
+   |                                    ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:369:9
+    |
+369 |         forall|j: int| s.contains(j) ==> readings[j] <= readings[jm],
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:369:24
+    |
+369 |         forall|j: int| s.contains(j) ==> readings[j] <= readings[jm],
+    |                        ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:381:9
+    |
+381 |         assert forall|j: int| s.contains(j) implies readings[j] <= readings[j0] by {
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:381:31
+    |
+381 |         assert forall|j: int| s.contains(j) implies readings[j] <= readings[j0] by {
+    |                               ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:392:13
+    |
+392 |             assert forall|j: int| s.contains(j) implies readings[j] <= readings[j0] by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:392:35
+    |
+392 |             assert forall|j: int| s.contains(j) implies readings[j] <= readings[j0] by {
+    |                                   ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:399:13
+    |
+399 |             assert forall|j: int| s.contains(j) implies readings[j] <= readings[jm2] by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:399:35
+    |
+399 |             assert forall|j: int| s.contains(j) implies readings[j] <= readings[jm2] by {
+    |                                   ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:416:9
+    |
+416 |         forall|j: int| s.contains(j) ==> readings[j] >= readings[jm],
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:416:24
+    |
+416 |         forall|j: int| s.contains(j) ==> readings[j] >= readings[jm],
+    |                        ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:428:9
+    |
+428 |         assert forall|j: int| s.contains(j) implies readings[j] >= readings[j0] by {
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:428:31
+    |
+428 |         assert forall|j: int| s.contains(j) implies readings[j] >= readings[j0] by {
+    |                               ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:439:13
+    |
+439 |             assert forall|j: int| s.contains(j) implies readings[j] >= readings[j0] by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:439:35
+    |
+439 |             assert forall|j: int| s.contains(j) implies readings[j] >= readings[j0] by {
+    |                                   ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:446:13
+    |
+446 |             assert forall|j: int| s.contains(j) implies readings[j] >= readings[jm2] by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:446:35
+    |
+446 |             assert forall|j: int| s.contains(j) implies readings[j] >= readings[jm2] by {
+    |                                   ^^^^^^^^^^^^^
+
+note: Verus printed one or more automatically chosen quantifier triggers
+      because it had low confidence in the chosen triggers.
+      To suppress these messages, do one of the following:
+        (1) manually annotate a single desired trigger using #[trigger]
+            (example: forall|i: int, j: int| f(i) && #[trigger] g(i) && #[trigger] h(j)),
+        (2) manually annotate multiple desired triggers using #![trigger ...]
+            (example: forall|i: int| #![trigger f(i)] #![trigger g(i)] f(i) && g(i)),
+        (3) accept the automatically chosen trigger using #![auto]
+            (example: forall|i: int, j: int| #![auto] f(i) && g(i) && h(j))
+        (4) use the --triggers-mode silent command-line option to suppress all printing of triggers.
+      (Note: triggers are used by the underlying SMT theorem prover to instantiate quantifiers;
+      the theorem prover instantiates a quantifier whenever some expression matches the
+      pattern specified by one of the quantifier's triggers.)
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/ft_midpoint.rs:446:13
+    |
+446 |             assert forall|j: int| s.contains(j) implies readings[j] >= readings[jm2] by {
+    |             ^^^^^^
+
+verification results:: 16 verified, 1 errors
+error: aborting due to 2 previous errors
+
