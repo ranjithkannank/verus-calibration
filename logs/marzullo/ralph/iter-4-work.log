@@ -1,0 +1,9 @@
+Clean tree (the `ralph/iter-4-work.log` is from outside my workflow). 
+
+**Summary of attempt 3:**
+
+- **Sub-tasks worked on:** 7 (main loop skeleton + structural invariant), 8 (threshold computation + overflow-safety assert), 9 (re-establish invariant in fall-through branch).
+- **Approach:** Mirrored `ft_midpoint`'s main loop verbatim — overflow guard, `n_u32 - f` threshold, 8-conjunct loop invariant with `#[trigger] intervals@[j2].lo` matching the design's prescribed trigger shape, early-return branch with `Interval { lo: p, hi: p }`, fall-through branch with the four-line invariant-maintenance proof.
+- **Result:** EXIT=1, **7 verified, 1 errors** (was 6/1). The single remaining failure is the expected post-loop placeholder return at line 274. Main loop, both branches, and threshold arithmetic all verified.
+- **Status:** `verus_failed` (continuing to sub-tasks 10-12 next iteration; the post-loop unreachability requires `lemma_exists_supported_endpoint`, which the design predicts will block on the missing Helly-1D precondition).
+- **Commit:** `8acb9c2 marzullo attempt-3: wire main loop, threshold, and fall-through invariant (sub-tasks 7-9)`.
