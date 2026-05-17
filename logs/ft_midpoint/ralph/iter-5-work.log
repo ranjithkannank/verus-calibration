@@ -1,0 +1,6 @@
+Attempt 4 complete. Summary:
+
+- **Sub-task worked on:** 11 — `lemma_max_reading_in_set` (L5 argmax over a finite set of reading indices)
+- **Result:** 15 verified, 1 error (= attempt 3's 14 + 1 new lemma). The new lemma discharges cleanly; the only remaining failure is the unchanged post-loop `readings[0]` placeholder, which is expected and isolates the still-pending existence obligation (L6).
+- **Status:** `verus_failed` (committed). Tree is clean (the only untracked file is `logs/ft_midpoint/ralph/iter-5-work.log`, an orchestration artifact not owned by the implementer).
+- **Next sub-task** (for the next iteration): sub-task 12 — mirror lemma `lemma_min_reading_in_set`.
