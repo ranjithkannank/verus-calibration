@@ -81,3 +81,50 @@ and falls through to a `proof { assert(false); } unreachable!()` (to be
 discharged later by `lemma_exists_midpoint`). Until L6 lands, the
 post-loop path will fail — but the per-iteration return should already
 discharge.
+
+## Attempt 3 — 2026-05-16
+**Sub-tasks worked on:** 10 (main `while` loop in `ft_midpoint`,
+in-loop early return via pigeonhole). The post-loop fall-through retains
+the `readings[0]` placeholder; existence lemma (L6) deferred to a later
+attempt.
+
+**Approach:**
+- Added an overflow-safety `assert(f as nat + 1 <= u32::MAX as nat) by { ... }`
+  before computing `threshold = f + 1`, justified by `2*f + 1 <= u32::MAX`.
+- Six-conjunct loop invariant: `0 <= j <= n`, `n == readings.len()`,
+  `threshold == f + 1`, `readings.len() <= u32::MAX`,
+  `readings.len() >= 2*f + 1`, `correct_indices(...).len() >= n - f`. The
+  last three carry the function-level precondition through the loop so
+  that `count_le`/`count_ge` preconditions and the pigeonhole lemma
+  preconditions both have what they need.
+- In-loop body: call `count_le` and `count_ge` (each returns the set
+  cardinality), and if both `>= threshold`, invoke
+  `lemma_pigeonhole_le` and `lemma_pigeonhole_ge` to discharge both
+  postcondition existentials, then `return v`.
+- Post-loop: kept the `readings[0]` placeholder. The verifier will
+  isolate the post-loop existence obligation as the only remaining
+  failure.
+
+**Verifier output:**
+```
+verification results:: 14 verified, 1 errors
+error: postcondition not satisfied
+   --> ft_midpoint.rs:385:9
+385 |         some_correct_le(readings@, result),
+        failed this postcondition
+... readings[0] at the end of the function body
+error: postcondition not satisfied
+   --> ft_midpoint.rs:386:9
+386 |         some_correct_ge(readings@, result),
+        failed this postcondition
+```
+14 verified (= previous 13 + the `ft_midpoint` body now verifying for the
+in-loop early return path). Only the post-loop fall-through fails.
+
+**Next idea:** Sub-tasks 11–14: land `lemma_max_reading_in_set` and
+`lemma_min_reading_in_set` (recursive over `s.len()`), then
+`lemma_exists_midpoint` (L6) using the argmax/argmin lemmas on the
+`Lo` / `Hi` partition. Wire L6 into the post-loop block via an
+existential-witness `choose` + `assert(false)` to discharge the
+fall-through, then change `readings[0]` to a `proof { ... }
+unreachable!()` (legitimately unreachable, discharged by `assert(false)`).

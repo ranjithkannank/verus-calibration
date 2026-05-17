@@ -385,8 +385,43 @@ pub fn ft_midpoint(readings: &Vec<Reading>, f: u32) -> (result: Reading)
         some_correct_le(readings@, result),
         some_correct_ge(readings@, result),
 {
-    // Stub: not yet implementing the main loop. This will fail
-    // postconditions; iterate in subsequent attempts.
+    // Overflow-safety: 2*f + 1 <= readings.len() <= u32::MAX
+    // ⇒ f <= (u32::MAX - 1)/2 < u32::MAX, so f + 1 fits in u32.
+    assert(f as nat + 1 <= u32::MAX as nat) by {
+        assert(2 * (f as nat) + 1 <= u32::MAX as nat);
+    }
+    let threshold: u32 = f + 1;
+    let n: usize = readings.len();
+    let mut j: usize = 0;
+    while j < n
+        invariant
+            0 <= j as int <= n as int,
+            n == readings.len(),
+            threshold as nat == f as nat + 1,
+            readings.len() <= u32::MAX as nat,
+            readings.len() as nat >= 2 * (f as nat) + 1,
+            correct_indices(readings.len() as nat).len()
+                >= readings.len() as nat - f as nat,
+        decreases n - j,
+    {
+        let v: Reading = readings[j];
+        let lec: u32 = count_le(readings, v);
+        let gec: u32 = count_ge(readings, v);
+        if lec >= threshold && gec >= threshold {
+            proof {
+                assert(le_set(readings@, v).len() >= f as nat + 1);
+                assert(ge_set(readings@, v).len() >= f as nat + 1);
+                lemma_pigeonhole_le(readings@, v, f as nat);
+                lemma_pigeonhole_ge(readings@, v, f as nat);
+            }
+            return v;
+        }
+        j = j + 1;
+    }
+    // Post-loop: requires lemma_exists_midpoint (L6), to be landed in a
+    // subsequent attempt. Placeholder return — verifier will flag the
+    // postcondition failure at this position, isolating the remaining
+    // obligation.
     readings[0]
 }
 
