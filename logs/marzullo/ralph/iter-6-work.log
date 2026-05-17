@@ -1,0 +1,11 @@
+Attempt 5 complete.
+
+**Summary:**
+- **Sub-task:** 11 (attempt the natural argmax-over-correct-indices + Helly-1D proof of `lemma_exists_supported_endpoint`).
+- **Result:** EXIT=1, 8 verified, 2 errors. Added `lemma_max_lo_in_set` (verified cleanly) and filled the body of `lemma_exists_supported_endpoint`. The proof closes everywhere except at the Helly step:
+  ```
+  error: assertion failed
+     --> .../marzullo.rs:292:20
+  292 |             assert(intervals[jm].lo <= intervals[k].hi);
+  ```
+- **Status:** `verus_failed`. This is attempt 1 on the Helly obligation; the design caps at 3 consecutive same-obligation failures before escalation. Committed; working tree clean.
