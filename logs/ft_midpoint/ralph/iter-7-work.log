@@ -1,0 +1,9 @@
+Attempt 6 complete.
+
+**Summary:**
+- **Sub-task 13** (L6 — `lemma_exists_midpoint`) landed standalone. The lemma proves by contradiction: build `Lo`/`Hi` index partitions, derive `|Lo| + |Hi| >= n >= 2f+1` via inclusion-exclusion (`lemma_set_intersect_union_lens`), case-split on whichever side reaches `f+1`, apply argmax (or argmin) to extract a witness whose `le_set` (or `ge_set`) cardinality is forced both `<= f` and `>= f+1`.
+- **Verifier:** 17 verified (= prior 16 + new L6), 1 error — the unchanged `readings[0]` placeholder still trips the two postconditions, exactly as expected. The lemma's contradiction-style proof, `=~=` set equality, and both argmax/argmin branches closed on first try.
+- **Status:** `verus_failed` (proceeding to next attempt).
+- **Next attempt:** sub-task 14 — strengthen the `ft_midpoint` main-loop invariant with a "no earlier j satisfied both thresholds" forall, then wire L6 + `choose` witness + `assert(false)` into the post-loop block, and flip `readings[0]` to `unreachable!()`.
+
+Working tree clean, commit pushed.
