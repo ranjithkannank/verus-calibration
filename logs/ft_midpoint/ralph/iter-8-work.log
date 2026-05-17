@@ -1,0 +1,6 @@
+Done. Summary of attempt 7:
+
+- **Sub-task:** 14 (wire `lemma_exists_midpoint` into the post-loop).
+- **Result:** **18 verified, 0 errors** — verus exits 0.
+- **Key change:** Added a forall invariant to the main `while` loop ("no earlier index satisfied both thresholds") with an explicit `#[trigger] readings@[j2]` to align with the trigger Verus chose for the existential in `lemma_exists_midpoint`'s ensures. The if-not-taken branch maintains the invariant via four bridge asserts. Post-loop, `lemma_exists_midpoint` + `choose` extracts a witness `jw < n`, the invariant at `j2 = jw` gives the contradictory disjunction, and `assert(false)` discharges both postconditions vacuously.
+- **Status:** `verus_passed`, committed, working tree clean. Ready for reviewer.
