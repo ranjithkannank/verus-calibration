@@ -264,6 +264,99 @@ fn count_ge(readings: &Vec<Reading>, v: Reading) -> (c: u32)
     c
 }
 
+// --- L4: pigeonhole lemmas --------------------------------------------------
+//
+// If at least `n - f` correct indices exist and at least `f + 1` indices
+// satisfy the reading-comparison, their intersection is non-empty (since
+// both sets live in [0, n) and (n - f) + (f + 1) > n). The non-empty
+// intersection witness directly proves `some_correct_le` / `some_correct_ge`.
+
+proof fn lemma_pigeonhole_le(readings: Seq<Reading>, v: Reading, f: nat)
+    requires
+        correct_indices(readings.len()).len() >= readings.len() - f,
+        le_set(readings, v).len() >= f + 1,
+    ensures
+        some_correct_le(readings, v),
+{
+    let n: int = readings.len() as int;
+    let a: Set<int> = correct_indices(readings.len());
+    let b: Set<int> = le_set(readings, v);
+
+    lemma_correct_indices_in_range(readings.len());
+    lemma_le_set_in_range(readings, v);
+    lemma_int_range(0, n);
+
+    // a + b is a subset of [0, n), hence (a + b).len() <= n.
+    assert((a + b).subset_of(set_int_range(0, n))) by {
+        assert forall|x: int| (a + b).contains(x) implies set_int_range(0, n).contains(x) by {
+            assert(a.contains(x) || b.contains(x));
+        }
+    }
+    lemma_len_subset(a + b, set_int_range(0, n));
+
+    // Inclusion-exclusion: |a+b| + |a∩b| = |a| + |b|.
+    lemma_set_intersect_union_lens(a, b);
+
+    // Hence |a∩b| >= (n - f) + (f + 1) - n = 1, so a∩b is non-empty.
+    assert(a.intersect(b).len() >= 1);
+    assert(a.intersect(b).finite()) by {
+        assert(a.intersect(b).subset_of(a));
+        lemma_len_subset(a.intersect(b), a);
+    }
+    assert(!a.intersect(b).is_empty()) by {
+        axiom_is_empty_len0(a.intersect(b));
+    }
+    // Extract a witness i in a∩b.
+    axiom_is_empty(a.intersect(b));
+    let i = choose|x: int| a.intersect(b).contains(x);
+    assert(a.intersect(b).contains(i));
+    assert(a.contains(i));
+    assert(b.contains(i));
+    // a.contains(i) ⇒ 0 <= i < n && correct_at(i)
+    // b.contains(i) ⇒ readings[i] <= v
+    assert(0 <= i < readings.len() && correct_at(i) && readings[i] <= v);
+}
+
+proof fn lemma_pigeonhole_ge(readings: Seq<Reading>, v: Reading, f: nat)
+    requires
+        correct_indices(readings.len()).len() >= readings.len() - f,
+        ge_set(readings, v).len() >= f + 1,
+    ensures
+        some_correct_ge(readings, v),
+{
+    let n: int = readings.len() as int;
+    let a: Set<int> = correct_indices(readings.len());
+    let b: Set<int> = ge_set(readings, v);
+
+    lemma_correct_indices_in_range(readings.len());
+    lemma_ge_set_in_range(readings, v);
+    lemma_int_range(0, n);
+
+    assert((a + b).subset_of(set_int_range(0, n))) by {
+        assert forall|x: int| (a + b).contains(x) implies set_int_range(0, n).contains(x) by {
+            assert(a.contains(x) || b.contains(x));
+        }
+    }
+    lemma_len_subset(a + b, set_int_range(0, n));
+
+    lemma_set_intersect_union_lens(a, b);
+
+    assert(a.intersect(b).len() >= 1);
+    assert(a.intersect(b).finite()) by {
+        assert(a.intersect(b).subset_of(a));
+        lemma_len_subset(a.intersect(b), a);
+    }
+    assert(!a.intersect(b).is_empty()) by {
+        axiom_is_empty_len0(a.intersect(b));
+    }
+    axiom_is_empty(a.intersect(b));
+    let i = choose|x: int| a.intersect(b).contains(x);
+    assert(a.intersect(b).contains(i));
+    assert(a.contains(i));
+    assert(b.contains(i));
+    assert(0 <= i < readings.len() && correct_at(i) && readings[i] >= v);
+}
+
 // --- The exec entry point ---------------------------------------------------
 //
 // Returns a value bracketed by some correct reading on each side.
