@@ -1,0 +1,10 @@
+Done — `marzullo` verified on attempt 1.
+
+**Summary:**
+- `verus exercises/marzullo.rs --crate-type=lib` exits 0 with 10 verified / 0 errors.
+- Full port from `ft_midpoint.rs` per the architect's design — all sub-tasks 1-10 implemented in one pass.
+- The constructive argmax-`lo` + Helly-1D existence proof is strictly simpler than `ft_midpoint`'s contradiction-via-inclusion-exclusion proof (no `Lo ∪ Hi` decomposition needed).
+- New discovered patterns added to `AGENTS.md`: constructive existence vs. contradiction trade-off, field-by-field reads for `Copy`-safety, and "full port in one attempt when the parent is identified."
+- `logs/marzullo/status` is `verus_passed`, attempt logged, committed, working tree clean.
+
+Ready for the reviewer.
