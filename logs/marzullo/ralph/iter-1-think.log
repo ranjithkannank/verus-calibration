@@ -1,0 +1,13 @@
+The design note is written at `exercises/marzullo.design.md`. Key points:
+
+1. **Critical caveat up front.** The frozen postcondition is a purely structural property of `intervals@` (it never references `correct_at`), yet the preconditions only constrain `correct_at`'s count and `intervals@`'s well-formedness. The "correct intervals overlap" assumption that makes Marzullo work is stated only in the spec's prose, not in `requires`. I included an explicit counterexample (`[[0,0], [10,10], [20,20]]`, `f=1`, all preconditions satisfied, postcondition fails) so the implementer knows what to expect.
+
+2. **Algorithm:** brute-force scan over `intervals[i].lo` endpoints, return `Interval { lo: p, hi: p }` on the first candidate with count ≥ n-f. Single-point output trivializes the `lo <= hi` and the witness.
+
+3. **Reuse:** prefix-set abstraction (`contained_set_upto`) mirroring ft_midpoint's `le_set_upto`, with the same structural lemma trio (subset, finiteness, extend via `=~=`) and the same trigger-matching trick on `intervals@[j2].lo` in the main loop invariant.
+
+4. **Predicted block:** `lemma_exists_supported_endpoint` — argmax over correct indices needs the Helly-1D bound `intervals[j].lo <= intervals[k].hi` for correct `j, k`, which the spec does not supply. Implementer should attempt honestly, then escalate or block (per AGENTS.md) rather than `assume`-patching.
+
+5. **12 sub-tasks** ordered easiest-to-hardest, with the structural plumbing (stubs, helpers, counting loop, main loop) all landing before the load-bearing existence lemma is attempted at step 11.
+
+The note ends with the required one-line summary. Per instructions I have not edited `exercises/marzullo.rs`, run verus, or touched any other file. Ready for the orchestrator to commit with `architect: design for marzullo` and hand off to the implementer.
