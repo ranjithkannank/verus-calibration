@@ -290,3 +290,102 @@ instantiation of the loop invariant at the witness index from the
     `assert(false)`.
 
 ## Summary: brute-force endpoint scan with prefix-set counting, mirroring ft_midpoint; expected to block on the existence lemma because the frozen spec lacks the Helly-1D "correct intervals overlap" precondition the algorithm needs.
+
+## Revision (escalation 20260517T044650Z)
+
+### What the implementer reported
+
+Attempt 5 confirmed the design's "Critical caveat" exactly. The
+implementer landed all structural machinery (prefix-set abstraction,
+`count_containing` with its prefix-set invariant, the three
+subset/finiteness lemmas, `lemma_max_lo_in_set` argmax recursion, and
+the main scan loop's trigger-aligned invariant) and reached
+`lemma_exists_supported_endpoint`. The single remaining failure is
+
+```
+error: assertion failed
+   --> exercises/marzullo.rs:292:20
+292 |             assert(intervals[jm].lo <= intervals[k].hi);
+```
+
+which is the Helly-1D bound the design flagged as unprovable. The
+implementer additionally supplied a constructive counterexample to
+the postcondition itself — three singleton intervals at `0, 10, 20`
+with `f = 1` and `correct_at = {0, 1}` — that satisfies all frozen
+preconditions but for which no point can be in `>= n - f = 2`
+intervals. The postcondition's existential is therefore false in that
+model, not just hard.
+
+### What this means
+
+The frozen spec is **not strengthenable from within this exercise**.
+Per the architect's own role rules ("Do not propose changes to the
+frozen spec, even if you think the spec is sub-optimal. The spec is
+the experiment.") option 1 from the escalation's "Recommendation to
+the architect" section — amending the precondition with
+`correct_intervals_overlap` — is out of scope for me. The design
+predicted this outcome and the prediction held.
+
+### Path forward: blocked-by-spec-gap
+
+The exercise is blocked, not solvable. Per AGENTS.md §"Iteration caps
+and escalation," the correct exit is for the implementer to write
+`logs/marzullo/blocked.md` and stop. Do not continue attempting the
+Helly step; further iterations are provably wasted. Do not weaken
+the spec, add `assume`, or stub the lemma with `external_body` — all
+forbidden by AGENTS.md and all would mask the real signal of this
+exercise.
+
+### Concretely: what the implementer should do next
+
+1. **Do not delete the existing machinery.** Everything around the
+   blocking obligation is verified and constitutes a regression
+   artifact: if the spec is ever amended with a Helly-1D
+   precondition, the remaining proof closes in roughly one more
+   iteration. Leave the partial proof of
+   `lemma_exists_supported_endpoint` in place with its single failing
+   `assert(intervals[jm].lo <= intervals[k].hi)`, and leave the
+   placeholder `Interval { lo: 0, hi: 0 }` at the post-loop tail.
+
+2. **Write `logs/marzullo/blocked.md`** capturing:
+   - the structural gap (no premise links `correct_at` to interval
+     geometry),
+   - the concrete counterexample (singleton intervals `[0,0],
+     [10,10], [20,20]` with `f=1`, `correct_at={0,1}`),
+   - the single failing verus line and obligation,
+   - the suggested amendment (`correct_intervals_overlap`) as a note
+     for any future un-freezing — this is documentation of the spec
+     bug, not a request to apply it,
+   - the verified machinery that would survive the amendment (list
+     by name: `contained_set`, `contained_set_upto`, the three
+     in-range lemmas, the extension lemma, `count_containing`,
+     `lemma_max_lo_in_set`, the main loop's trigger-aligned
+     invariant, the "return on hit" branch).
+
+3. **Commit and stop.** Per AGENTS.md §"Iteration caps and
+   escalation," hitting an unresolvable structural blocker is a
+   data point, not a failure of the experiment. The repo state is:
+   exercise file partially verified, design note revised, blocked.md
+   filed.
+
+### What does NOT change
+
+- The strategy in §"Algorithmic sketch", §"Key invariants", §"Helper
+  lemmas predicted", and §"Sub-tasks" is correct and was followed
+  successfully through sub-task 11. Sub-task 12 is unreachable
+  without a spec amendment.
+- The `=~=` extensional-equality, finite-universe-bridge, and
+  argmax-recursion patterns from ft_midpoint transferred cleanly;
+  no new patterns to promote into AGENTS.md from this exercise.
+- The reviewer should treat the partial proof as the deliverable,
+  with `blocked.md` as the rationale. The git tag `spec-frozen-
+  marzullo` continues to define the frozen spec; nothing in
+  `exercises/marzullo.rs` should diverge from it.
+
+### Note on the recommendation in escalation.md
+
+The implementer offered the architect two options. Option 1 (amend
+the spec) is not mine to take — the spec is frozen and the architect
+prompt explicitly forbids proposing spec changes. Option 2 (mark
+blocked-by-spec-gap) is the correct one and is what this revision
+directs.
