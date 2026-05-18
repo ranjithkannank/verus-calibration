@@ -167,11 +167,13 @@ history at commit ad91c63 (sensor_poll_honest: DONE) and its
 predecessors.
 -->
 
-### counter_filler (attempt 1, success)
-- **Target-bounded loop shape: invariant uses `c.value() <= target` + `target <= c.bound()` instead of producer's `c.value() == start + i` + `start + n <= c.bound()`.** The two conjuncts that carry the proof are (a) the upper-bound progress fact `c.value() <= target` (so loop exit + negated guard collapses to `c.value() == target`), and (b) the bound-preservation fact `target <= c.bound()` (so `c.value() < target` from the loop guard plus this transitively gives `c.value() < c.bound()`, discharging `incr`'s precondition). No `start` snapshot, no `i: u32` counter, no `start + n <= c.bound()` — those were producer-specific.
-- **`decreases target - c.value()` works when `c.value()` is a closed spec fn returning `u32`.** Each `incr()` raises `c.value()` by 1, so the measure decreases by 1. The invariant's `c.value() <= target` keeps the measure non-negative. No need for a ghost expression — the closed spec-fn read is acceptable in `decreases`.
-- **`c.get() < target` as the loop guard is fine.** `get` takes `&self`, has no side effects, and its precondition `self.invariant()` is in the loop invariant. Verus re-checks the precondition on each iteration from the invariant. No need for a `let mut v: u32 = c.get();` shadow variable — the direct exec call in the guard verifies cleanly and is closer to the design's "no separate loop counter" intent.
-- **Cross-family transfer worked on first attempt.** The design note deliberately omitted the invariant shape and warned against copying `counter_producer`'s. The agent identified that the snapshot family had to be re-derived for the target-bounded shape: drop `start`, drop `i`, replace `c.value() == start + i` with `c.value() <= target`, replace `start + n <= c.bound()` with `target <= c.bound()`. Second data point (after `sensor_poll_honest`) that the methodology generalises to a different proof family from the playbook entry.
+<!--
+### counter_filler (attempt 1, success) — TEMPORARILY REMOVED 2026-05-18
+
+Removed during the audit re-run for the same reason as the
+sensor_poll_honest entry above. Original entry preserved in git
+history at commit f0c9a2b (counter_filler: DONE) and predecessors.
+-->
 
 ### quorum_cert (attempts 1–6, success)
 - **Pigeonhole-via-contradiction pattern**: The `lemma_qc_has_honest_voter` style proof is best written as `if !(exists honest. P(honest)) { ... assert(false); }`. Inside that branch the negated existential gives `forall h. !P(h)`, which an `assert forall ... implies ... by { }` block can convert into a subset relation. Combined with `vstd::set_lib::lemma_len_subset`, the cardinality contradiction closes.
