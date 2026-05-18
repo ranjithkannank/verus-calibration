@@ -34,7 +34,42 @@ pub fn swap(v: &mut Vec<u32>, i: usize, j: usize)
                 final(v)@[k] == old(v)@[k],
         final(v)@.to_multiset() == old(v)@.to_multiset(),
 {
-    unimplemented!()
+    let vi: u32 = v[i];
+    let vj: u32 = v[j];
+    v[i] = vj;
+    v[j] = vi;
+
+    proof {
+        broadcast use group_to_multiset_ensures;
+
+        let s0 = old(v)@;
+        let i_ = i as int;
+        let j_ = j as int;
+        let a = s0[j_];  // value being placed at position i
+        let b = s0[i_];  // value being placed at position j
+
+        // After the two assignments, the view satisfies:
+        let s1 = s0.update(i_, a);
+        // v@ == s1.update(j_, b)
+        assert(v@ == s1.update(j_, b));
+
+        // s1[j_] == s0[j_] == a (update at i_ doesn't change j_ — even if i_ == j_,
+        // we updated to s0[j_] = a, so s1[j_] = a = s0[j_]).
+        assert(s1[j_] == s0[j_]);
+
+        // From the broadcast group `to_multiset_update`:
+        //   s1.to_multiset() == s0.to_multiset().insert(a).remove(s0[i_])
+        //                    == s0.to_multiset().insert(a).remove(b)
+        //   v@.to_multiset() == s1.to_multiset().insert(b).remove(s1[j_])
+        //                    == s1.to_multiset().insert(b).remove(a)
+        // Composing:
+        //   v@.to_multiset() == s0.to_multiset().insert(a).remove(b).insert(b).remove(a)
+        //
+        // The multiset is invariant under this composition because
+        // s0.to_multiset().count(b) >= 1 (since b = s0[i_] and i_ is a valid index).
+        // Close via extensional equality.
+        assert(v@.to_multiset() =~= s0.to_multiset());
+    }
 }
 
 } // verus!
