@@ -1,0 +1,10 @@
+Review complete. Conclusion: **APPROVE**.
+
+All five checklist items pass:
+1. Frozen `requires`/`ensures` clauses on `check_distinct`, `marzullo`, and `poll` are byte-identical — only their bodies (previously `unimplemented!()`) were filled in.
+2. No pre-existing `spec fn` body was modified; `containing_upto` is a new proof-only helper.
+3. Grep over `*.rs` confirms zero `assume(`, `external_body`, `unimplemented!`, `unreachable!`, `panic!`, or `assume_specification` tokens.
+4. The only new exec helper (`count_containing`) has a non-trivial u32-overflow precondition; no new `requires` on previously-spec'd functions.
+5. No `open`/`closed` toggles on existing declarations.
+
+Committed as `bfeae28` ("sensor_poll_signed review: APPROVE").
