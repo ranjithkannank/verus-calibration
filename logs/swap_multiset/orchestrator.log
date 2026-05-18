@@ -15,3 +15,15 @@
       - **Status:** `verus_passed` (1 verified, 0 errors)
       - **Approach:** Reads + index-set assignments, then a proof block that brings in the `vstd::seq_lib::group_to_multiset_ensures` broadcast group. The load-bearing lemma is `to_multiset_update` (`s.update(i,a).to_multiset() == s.to_multiset().insert(a).remove(s[i])`). Two updates reduce the multiset to `m.insert(a).remove(b).insert(b).remove(a)`, and `=~=` (extensional equality on `Multiset`) closes the obligation pointwise.
       - **Invention test:** Solved without reading the witness file or the invalidated `vec_swap.rs`/`vec_swap_v2.rs`. The proof family was located by grepping vstd's `seq_lib.rs` and `multiset.rs` for `to_multiset` and the multiset broadcast groups.
+  > committed: e59f122 work: swap_multiset iter-1
+
+--- iteration 2  |  state=REVIEW  |  attempts=1/25
+
+  > role=REVIEW  model=claude-opus-4-7  agent=reviewer  allowed=ALLOWED_REVIEWER
+  > log: logs/swap_multiset/ralph/iter-2-review.log
+  > exit: 0  (head of log:)
+      Review complete. **Conclusion: APPROVE.**
+      
+      All five checklist items passed:
+      1. `requires`/`ensures` byte-identical to frozen baseline.
+      2. No pre-existing `spec fn`s to preserve (frozen file has none).
