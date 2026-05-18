@@ -30,3 +30,4 @@
   > committed: 69e05bc review: sensor_poll_honest iter-2
 
 --- iteration 3  |  state=APPROVED  |  attempts=1/20
+DONE — sensor_poll_honest verified and approved.
