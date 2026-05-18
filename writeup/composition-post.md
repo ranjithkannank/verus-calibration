@@ -1,10 +1,32 @@
-# Source material — blog post on composing two verified primitives
+# Source material — revisions to the May 17 sensor-fusion post
 
-This file is raw input for the blog-writing agent. Goal: a
-self-contained follow-up to the prior posts in the series. Assumes
-the reader hasn't read them; opens with enough context to stand
-alone. The piece's centerpiece is an honest accounting of what
-"composing existing primitives" did and did not mean here.
+This file was originally drafted as a standalone follow-up post on
+composition. Editorial decision 2026-05-18: fold the material into
+the existing May 17 post (<https://ranjithkannan.com/2026/05/17/verified-byzantine-tolerant-sensor-fusion/>)
+rather than ship a new post immediately after it. The May 17 post
+is still in draft and can be restructured to absorb composition
+naturally — its existing "What compounded across exercises" section
+is the right slot for the discovery-test result, and "Honest
+limitations" is the right slot for the composition-specific scope
+caveats.
+
+This file is raw input for the blog-writing agent. The agent should
+treat the technical sections below as material to weave into May 17
+in the right places, not as a self-contained post. Section
+mappings (suggested):
+
+- The three exercise sections (`sensor_poll`, `sensor_poll_signed`,
+  `sensor_poll_honest` below) → new subsections in May 17 after the
+  existing "Two verified sensor-fusion artifacts" section. Possibly
+  retitled "Two verified primitives, three compositions" or similar.
+- The audit-confirmed discovery-test material (the "What this does
+  and does not show" section below) → extends May 17's "What
+  compounded across exercises" section.
+- The honest-scope items (the "What this did not do" section below)
+  → extends May 17's "Honest limitations" section.
+- The "Where this fits" forward-looking material → updates May 17's
+  "Where this is heading" section, moving items from hypothetical
+  to in-progress.
 
 Tone target: same as the existing posts (technical-practical, "we"
 voice, minimal em-dashes, no folksy aphorisms, no time-of-day
@@ -12,49 +34,31 @@ framing, no cost numbers, no over-claiming). Be honest about what
 the result does and doesn't show, including the partial scope of
 the goal.
 
-## Title candidates
+## Bridging context (for the writing agent)
 
-- "What 'Composing Two Verified Primitives' Actually Means"
-- "Composition Without Imports: A Verified Sensor Poll, Honestly"
-- "From Composition Demonstration to Honest-Voter Guarantee, in Three Exercises"
-- "Closing the Loop on Designed vs Discovered Proofs"
+May 17 currently ends its primitive-level story at `marzullo` and
+flags single-module focus as a limitation. The composition
+material below extends the same domain (Byzantine sensor fusion)
+into a different verification regime — composing the verified
+primitives into a single end-to-end function whose correctness
+theorem spans the seam between them. Three composition exercises:
+the first demonstrated the composition regime; the second threaded
+the cryptographic trust boundary through the contract; the third
+strengthened the postcondition with an honest-voter guarantee and
+ran as a deliberate discovery test for the methodology itself. All
+three verified in one attempt each. Both discovery tests
+(sensor_poll_honest here and counter_filler in the multi-module
+track) were subsequently audited under a hardened tool whitelist
+that denies the agent reading the operator-authored witness file,
+with each exercise's prior playbook entry stripped from
+`AGENTS.md`; both audits passed in one attempt.
 
-The writing agent picks. The first two are the original framing
-(one composition exercise, partial scope). The third reflects the
-extended arc the post now covers (three composition exercises
-landing two of the three "what this did not do" items from the
-first run). The fourth foregrounds the deliberate discovery test
-that motivated the third exercise. A title that overclaims
-composition would be misleading; the post itself spends meaningful
-space being clear about the remaining gaps.
+When weaving into May 17, the agent should connect this work to
+the existing "single-module focus" limitation and the existing
+"trust-boundary at uninterpreted crypto" framing — both gaps are
+addressed in part by the composition material.
 
-## Opening
-
-Earlier posts in this series described an autonomous coding loop
-wired into the Verus formal verifier, used it to produce six
-calibration exercises, three Byzantine fault-tolerant primitives
-(a quorum certificate, a fault-tolerant midpoint, Marzullo's
-interval-agreement algorithm), and three multi-module exercises
-that stressed the harness on cross-module reasoning. Each
-artifact lived in its own Verus crate. They were verified but
-uncomposed.
-
-This post is what happened when we tried to compose them. The
-honest one-sentence summary: we built three composition
-exercises, each adding one piece of what a real Byzantine-tolerant
-verified sensor poll would need. The first demonstrated the
-composition regime. The second threaded the cryptographic trust
-boundary through the contract. The third strengthened the
-postcondition with an honest-voter guarantee and ran as a
-deliberate discovery test for the methodology itself. All three
-verified in one attempt each. The result is meaningfully closer
-to "compose the existing primitives into a small system" than the
-first exercise alone suggested, and it remains short of that
-literal goal in ways the post is explicit about.
-
-This post is about both halves.
-
-## What we set out to do
+## What we set out to do (extends May 17's narrative arc)
 
 The previous post noted that the three verified BFT primitives —
 `quorum_cert`, `ft_midpoint`, `marzullo` — were uncomposed. A
@@ -472,23 +476,28 @@ with `<exercise>` one of `sensor_poll`, `sensor_poll_signed`,
 All on `main` at
 <https://github.com/ranjithkannank/verus-calibration>.
 
-## A note on tone for the writing agent
+## A note on tone for the writing agent (when integrating into May 17)
 
-The hardest line to keep in this piece is the line between
-"we did real composition work" (true, and worth saying) and "we
-composed the existing primitives" (overclaim, and worth not
-saying). The post is most useful if it lands the first without
-implying the second. The "What this did not do" section exists
-precisely to keep the honest read accessible to a reader who
-skims. Resist the urge to soften it or to bury it after the
-methodology-win section. The honesty is the point.
+The hardest line to keep when adding this material is the line
+between "we did real composition work" (true, and worth saying)
+and "we composed the existing primitives" (overclaim, and worth
+not saying). The integration is most useful if May 17 lands the
+first without implying the second. The "What this did not do"
+material above must extend May 17's "Honest limitations" section
+in a way a skim-reader catches; do not soften it or bury it after
+the methodology-win section.
 
-The discovery-test result is the strongest methodology claim in
-this post. Land it accurately: the agent recognised and reused
-patterns from the playbook in *different* exercises with
-*different* obligations, in one attempt each, and the claim
-survived an audit re-run with the prior playbook summaries
-stripped and witness reads denied. It does not show that the
-methodology can invent patterns the playbook does not document;
-that is a separate result on a separate exercise, with its own
-caveats, treated in `writeup/methodology-updates.md`.
+The audit-confirmed discovery-test result is the strongest
+methodology claim added by this material. Land it accurately: the
+agent recognised and reused patterns from the playbook in
+*different* exercises with *different* obligations, in one
+attempt each, and the claim survived audit re-runs with each
+exercise's prior playbook summary stripped and witness reads
+denied. It does not show that the methodology can invent patterns
+the playbook does not document; that is a separate result
+(swap_multiset) covered by `methodology-updates.md` as input for
+the May 10 post revision.
+
+Do NOT publish this as a standalone post. The intent is a single
+revised May 17 that absorbs composition; a follow-up post on the
+same domain immediately after May 17 would over-fragment.

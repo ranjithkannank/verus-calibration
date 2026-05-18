@@ -1,33 +1,60 @@
-# Source material — updates to the existing blog post
+# Source material — revisions to the May 10 post
 
 This file is raw input for the blog-writing agent. Goal: refresh the
 existing post at <https://ranjithkannan.com/2026/05/10/verus-calibration-formal-verifier-loop/>
-with the methodology changes made since publication. The post is still
-in draft, so direct edits are appropriate.
+with the methodology changes made since publication. The post is
+still in draft, so direct edits are appropriate.
+
+Editorial decision 2026-05-18: this is the single revision source
+for May 10. Earlier this week the find-fix-audit arc (witness-read
+leak in the original implementer whitelist → hardening +
+empirical probe → clean re-test on `swap_multiset` → audit re-runs
+of the two prior discovery exercises) was a candidate for its own
+short methodology vignette in the style of "Splitting Audit from
+Decision." Decision: keep it as a section inside the May 10
+revision instead. May 10 is already the methodology meta-post and
+its "What the loop got wrong" / "Methodology contributions"
+sections are the right shape for this content; promoting it to its
+own post fragments a story that lives naturally inside the
+methodology baseline.
 
 Tone target: same as the existing post (technical-practical, "we"
 voice, minimal em-dashes, no folksy aphorisms, no time-of-day
-framing, no cost numbers). Every claim below is backed by a commit in
-<https://github.com/ranjithkannank/verus-calibration>.
+framing, no cost numbers). Every claim below is backed by a commit
+in <https://github.com/ranjithkannank/verus-calibration>.
 
 ## What is and isn't changing
 
 **Staying.** The trust-ladder framing, the three-role architecture
-overview, the two-sandbox-layer description, the four exercises (now
-counting quorum_cert as the fourth), the "what's different from
-existing work" section, the reproducibility links.
+overview, the two-sandbox-layer description, the calibration
+exercises, the "what's different from existing work" section, the
+reproducibility links.
 
 **Updating.** The model used by the implementer. The
-methodology-contributions section adds two new items. The
-limitations section has two items that are no longer limitations
-(they were fixed). The "what we'd do next" section is reworked: items
-already done should move out, and the BFT direction is now an active
-artifact, not a hypothetical.
+methodology-contributions section adds new items (per-iteration
+scoping, architect sub-task lists, pre-spec witness verification,
+deliberate discovery tests, witness-deny whitelist hardening
+empirically verified by a probe). The limitations section has two
+items that are no longer limitations (they were fixed) plus a new
+one (the original implementer whitelist allowed witness reads —
+fixed but worth flagging honestly). The "what we'd do next"
+section is reworked: items already done move out; the BFT
+direction is now an active artifact, not a hypothetical.
 
 **Adding.** A short paragraph in the architecture section about
-prompt-level scoping per iteration, since this is a new methodology
-piece that wasn't in the original post. A new exercise row in the
-results table.
+prompt-level scoping per iteration. New rows in the results table
+covering all post-calibration exercises through `swap_multiset`,
+including the `vec_swap` / `vec_swap_v2` INVALIDATED rows kept as
+honest history.
+
+**NOT covered by this file.** The composition exercises
+(`sensor_poll`, `sensor_poll_signed`, `sensor_poll_honest`) and
+the discovery-test audit results for `sensor_poll_honest` and
+`counter_filler` belong in the May 17 sensor-fusion post revision,
+not in May 10. See `composition-post.md` for that material. The
+May 10 revision *mentions* those exercises in the results table
+and links forward to the revised May 17 post, but does not
+describe them in detail.
 
 ## Section-by-section delta
 
