@@ -90,6 +90,7 @@ case "$EXERCISE" in
   sensor_poll_honest) ATTEMPT_CAP=20 ;;
   counter_filler) ATTEMPT_CAP=15 ;;
   vec_swap) ATTEMPT_CAP=25 ;;
+  vec_swap_v2) ATTEMPT_CAP=25 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 
@@ -247,6 +248,18 @@ DISALLOWED_TOOLS=(
   "Bash(curl*)" "Bash(wget*)" "Bash(nc *)" "Bash(ssh*)" "Bash(scp*)"
   "Bash(brew*)" "Bash(npm*)" "Bash(pip*)" "Bash(cargo install*)"
   "Bash(sudo*)" "Bash(su *)"
+  # Witness files are operator territory. Block every tool path the agent
+  # could use to peek at the reference implementation. Multiple shapes to
+  # cover both single-file (`exercises/<name>_witness.rs`) and multi-file
+  # (`exercises/<name>_witness/...`) layouts.
+  "Read(**/exercises/*_witness*)" "Read(**/exercises/*_witness/**)"
+  "Read(**/*_witness.rs)" "Read(**/*_witness/**)"
+  "Glob(**/exercises/*_witness*)" "Glob(**/*_witness*)"
+  "Grep(**/exercises/*_witness*)" "Grep(**/*_witness.rs)"
+  "Bash(cat *_witness*)" "Bash(cat *_witness/*)"
+  "Bash(grep *_witness*)" "Bash(rg *_witness*)"
+  "Bash(head *_witness*)" "Bash(tail *_witness*)"
+  "Bash(ls *_witness*)"
 )
 
 # Classify a failed claude call by inspecting its iteration log. Echoes one
