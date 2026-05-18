@@ -156,24 +156,17 @@ The full state machine and how the human operator drives it is in `ORCHESTRATION
 - **The new `sig: Signature` field on `SensorReport` is invisible to `check_distinct`.** The bitmap-backed body only reads `sensor_id`; the structural invariant is identical to `sensor_poll`'s, byte-for-byte. The uninterp `pk_of` / `signature_valid` / `report_msg` predicates and the open `all_signatures_valid` spec fn never appear in `check_distinct`'s body or proof.
 - **The projection lemma `reports_containing =~= intervals_containing(project_intervals(...))` is byte-identical to `sensor_poll`'s** — adding the `sig` field doesn't touch the membership predicate (which reads `reports[i].interval`), so the empty-body extensional-equality lemma still closes from `=~=` alone.
 
-<!--
-### sensor_poll_honest (attempt 1, success) — TEMPORARILY REMOVED 2026-05-18
+### sensor_poll_honest (attempt 1, success — audit-confirmed 2026-05-18)
+- **The honest-voter clause is one pigeonhole lemma on top of the signed exercise.** The body of `poll` is byte-equivalent to `sensor_poll_signed`'s `poll` (check_distinct → bundle-assert → projection loop → `marzullo` → projection-lemma bridge giving `reports_containing(reports@, p_witness).len() >= n - f`). The new work is exactly one helper lemma `lemma_honest_supporter_exists(reports, p, f)` plus a one-line `choose` for the second witness inside `poll`'s proof block. No new exec code, no changes to `fusion` or `auth`.
+- **The pigeonhole recipe is identical to ft_midpoint's `Lo ∪ Hi` decomposition, but inverted.** Where ft_midpoint *assumed* the existence failed and derived `|Lo ∪ Hi| >= n` for a contradiction, here we *constructively* derive `|s ∩ c| >= 1` from `|s|, |c| >= n - f` and `n >= 2f + 1`. The same four-step chain (range subset, finiteness via `lemma_len_subset`, inclusion–exclusion via `lemma_set_intersect_union_lens`, witness via `axiom_is_empty_len0`/`axiom_is_empty` + `choose`) closes the lemma in a single proof block.
+- **`s + c =~= s.union(c)` is the bridge between `lemma_set_intersect_union_lens`'s output and a `.union(c)` upper bound from `subset_of(set_int_range(0, n))`.** The lemma states its conclusion with `(a + b).len()`; subset-based finiteness reasoning uses `s.union(c)`. A one-line extensional `=~=` collapses the two, then arithmetic closes `|s ∩ c| >= |s| + |c| - n`.
+- **Discovery without a named load-bearing lemma.** The design note deliberately omitted the proof structure. The agent identified (a) that the new clause is a second existential, (b) that both required cardinalities collapse onto the same `[0, n)` universe, (c) that pigeonhole/inclusion–exclusion is the off-the-shelf tool, and (d) that the ft_midpoint discovery notes already encode the lemma chain. Time-to-first-success: one attempt, originally and again on the 2026-05-18 audit re-run (with the hardened whitelist denying witness reads and this same entry temporarily stripped from AGENTS.md).
 
-The agent's own attempt-1 playbook summary for sensor_poll_honest is
-removed during the audit re-run so that the re-run does not read its
-own prior summary in this file. If the audit passes, the post-audit
-agent's entry replaces this one. Original entry preserved in git
-history at commit ad91c63 (sensor_poll_honest: DONE) and its
-predecessors.
--->
-
-<!--
-### counter_filler (attempt 1, success) — TEMPORARILY REMOVED 2026-05-18
-
-Removed during the audit re-run for the same reason as the
-sensor_poll_honest entry above. Original entry preserved in git
-history at commit f0c9a2b (counter_filler: DONE) and predecessors.
--->
+### counter_filler (attempt 1, success — audit-confirmed 2026-05-18)
+- **Target-bounded loop shape: invariant uses `c.value() <= target` + `target <= c.bound()` instead of producer's `c.value() == start + i` + `start + n <= c.bound()`.** The two conjuncts that carry the proof are (a) the upper-bound progress fact `c.value() <= target` (so loop exit + negated guard collapses to `c.value() == target`), and (b) the bound-preservation fact `target <= c.bound()` (so `c.value() < target` from the loop guard plus this transitively gives `c.value() < c.bound()`, discharging `incr`'s precondition). No `start` snapshot, no `i: u32` counter, no `start + n <= c.bound()` — those were producer-specific.
+- **`decreases target - c.value()` works when `c.value()` is a closed spec fn returning `u32`.** Each `incr()` raises `c.value()` by 1, so the measure decreases by 1. The invariant's `c.value() <= target` keeps the measure non-negative. No need for a ghost expression — the closed spec-fn read is acceptable in `decreases`.
+- **`c.get() < target` as the loop guard is fine.** `get` takes `&self`, has no side effects, and its precondition `self.invariant()` is in the loop invariant. Verus re-checks the precondition on each iteration from the invariant. No need for a `let mut v: u32 = c.get();` shadow variable — the direct exec call in the guard verifies cleanly and is closer to the design's "no separate loop counter" intent.
+- **Cross-family transfer worked on first attempt.** The design note deliberately omitted the invariant shape and warned against copying `counter_producer`'s. The agent identified that the snapshot family had to be re-derived for the target-bounded shape: drop `start`, drop `i`, replace `c.value() == start + i` with `c.value() <= target`, replace `start + n <= c.bound()` with `target <= c.bound()`. Two data points (original run + 2026-05-18 audit re-run under hardened whitelist with this entry stripped); both 1-attempt.
 
 ### quorum_cert (attempts 1–6, success)
 - **Pigeonhole-via-contradiction pattern**: The `lemma_qc_has_honest_voter` style proof is best written as `if !(exists honest. P(honest)) { ... assert(false); }`. Inside that branch the negated existential gives `forall h. !P(h)`, which an `assert forall ... implies ... by { }` block can convert into a subset relation. Combined with `vstd::set_lib::lemma_len_subset`, the cardinality contradiction closes.
