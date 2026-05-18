@@ -89,6 +89,7 @@ case "$EXERCISE" in
   sensor_poll_signed) ATTEMPT_CAP=18 ;;
   sensor_poll_honest) ATTEMPT_CAP=20 ;;
   counter_filler) ATTEMPT_CAP=15 ;;
+  vec_swap) ATTEMPT_CAP=25 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 
