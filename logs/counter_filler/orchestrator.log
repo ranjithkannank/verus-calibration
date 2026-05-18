@@ -1,0 +1,11 @@
+==================================
+ Ralph loop: counter_filler
+ Attempt cap: 15
+ Outer ceiling: 23
+ Dry-run: 0
+==================================
+
+--- iteration 1  |  state=WORK  |  attempts=0/15
+
+  > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
+  > log: logs/counter_filler/ralph/iter-1-work.log
