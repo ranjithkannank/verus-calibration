@@ -14,6 +14,7 @@ EXERCISES=(
   exercises/cross_module_counter.rs
   exercises/counter_multifile/main.rs
   exercises/counter_producer/main.rs
+  exercises/sensor_poll/main.rs
 )
 
 fail=0

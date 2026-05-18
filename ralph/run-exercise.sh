@@ -85,6 +85,7 @@ case "$EXERCISE" in
   cross_module_counter) ATTEMPT_CAP=15 ;;
   counter_multifile) ATTEMPT_CAP=10 ;;
   counter_producer) ATTEMPT_CAP=12 ;;
+  sensor_poll) ATTEMPT_CAP=18 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 
