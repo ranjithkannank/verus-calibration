@@ -27,3 +27,6 @@
       Summary of the audit:
       - The diff against `spec-frozen-vec_swap` is a single hunk that replaces `unimplemented!()` with the swap body + proof block.
       - All five `ensures` clauses and both `requires` clauses appear only as unchanged context lines.
+  > committed: fa5c1f9 review: vec_swap iter-2
+
+--- iteration 3  |  state=APPROVED  |  attempts=1/25
