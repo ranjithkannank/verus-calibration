@@ -345,13 +345,27 @@ a finite universe. All three landed in one attempt.
 
 The designed-vs-discovered question — does the methodology
 support discovery, not just execution of pre-named proof
-constructs — gets a tentative yes, on one proof family. The
-third exercise was the first deliberate test. The agent
+constructs — gets a clearer yes than this post originally
+landed. Two deliberate discovery tests passed: `sensor_poll_honest`
 recognised the inclusion-exclusion family from the `ft_midpoint`
-playbook entry and applied it to a new obligation in a new
-exercise. This is suggestive on one data point. A second
-discovery test on a different proof family is the natural next
-move.
+playbook entry, and `counter_filler` (a sibling exercise in the
+multi-module track) recognised the snapshot+bound-preservation
+family from `counter_producer`'s entry and adapted it to a
+structurally different loop shape. Both were subsequently
+audited under a tool whitelist that explicitly denies the
+agent reading the operator-authored witness file, with each
+exercise's own prior playbook summary stripped from `AGENTS.md`;
+both audits passed in one attempt with structurally identical
+solutions. Two data points, two distinct proof families,
+audit-confirmed. The next step on the same axis — whether the
+methodology can do *invention* on a proof family the playbook
+does not document at all — is captured in a separate
+single-function exercise (`swap_multiset`) outside the scope
+of this post; see `writeup/methodology-updates.md` for that
+arc, which is genuinely a one-data-point result and
+required two false starts (a witness-read leak and an
+operator copy-paste error) before the third attempt was
+clean enough to count.
 
 The roadmap question — do we have a verified Byzantine-tolerant
 sensor poll that reuses the three primitives as imported
@@ -469,12 +483,12 @@ precisely to keep the honest read accessible to a reader who
 skims. Resist the urge to soften it or to bury it after the
 methodology-win section. The honesty is the point.
 
-The discovery-test result in the third exercise is the strongest
-methodology claim in this post. It is also a one-data-point
-claim. Land it accurately: the agent recognised and reused a
-pattern from the playbook in a different exercise with a
-different obligation, in one attempt. It does not show that the
-methodology can invent patterns the playbook does not document.
-The second discovery test, on a different proof family, is the
-test that earns the stronger claim. That is the next move on the
-methodology axis.
+The discovery-test result is the strongest methodology claim in
+this post. Land it accurately: the agent recognised and reused
+patterns from the playbook in *different* exercises with
+*different* obligations, in one attempt each, and the claim
+survived an audit re-run with the prior playbook summaries
+stripped and witness reads denied. It does not show that the
+methodology can invent patterns the playbook does not document;
+that is a separate result on a separate exercise, with its own
+caveats, treated in `writeup/methodology-updates.md`.

@@ -84,7 +84,11 @@ The results-at-a-glance table needs further rows. Final shape:
 | counter_producer      | DONE   | 1        | First cross-module composition. Producer's loop invariant carries facts the counter doesn't expose. |
 | sensor_poll           | DONE   | 1        | First composition-of-primitives exercise. Projection lemma bridges marzullo's frame to the caller's frame. |
 | sensor_poll_signed    | DONE   | 1        | Cryptographic trust boundary threaded purely at the spec layer. |
-| sensor_poll_honest    | DONE   | 1        | First deliberate discovery test (see methodology section). |
+| sensor_poll_honest    | DONE   | 1 (audit-confirmed) | First deliberate discovery test. Re-run under hardened whitelist with prior playbook entry stripped: 1 attempt again. |
+| counter_filler        | DONE   | 1 (audit-confirmed) | Second discovery test, different proof family. Re-run under hardened whitelist: 1 attempt again. |
+| vec_swap              | INVALIDATED | 1   | First attempted invention test; agent read the witness under the permissive whitelist and ported the proof. Kept on disk as evidence. |
+| vec_swap_v2           | INVALIDATED | 1   | Second attempt; operator's `cp vec_swap.rs vec_swap_v2.rs` copied the agent's already-filled body as the scaffold. Agent honestly flagged "no edits made". Kept on disk as evidence. |
+| swap_multiset         | DONE   | 1        | First clean invention test (proof family the playbook did not document). Hand-typed scaffold, hardened whitelist. Proof structurally different from the operator-authored witness. |
 
 Per-exercise narratives for the post-calibration entries live in the
 separate writeup drafts: `quorum-cert-post.md`, `sensor-fusion-post.md`,
@@ -149,31 +153,63 @@ shape as the existing three:
 > agent executed a designed proof rather than discovering one. The
 > caveat is worth taking seriously — methodology that only handles
 > executing pre-designed proofs is a much narrower claim than
-> methodology that supports discovery. `sensor_poll_honest` was set
-> up specifically to test the discovery half. Its design note
-> states the proof obligation (an honest-voter clause: there exists
-> a correct sensor whose interval contains the agreed point) and
-> the informal mathematical content (`n - f` supporters and
-> `n - f` correct sensors in a universe of `n` must overlap), but
-> deliberately does not name the supporting lemmas, the
-> helper-set constructions, the trigger annotations, or the
-> sub-proof structure. The agent verified in one attempt. Its
-> proof introduced a new helper lemma `lemma_honest_supporter_exists`
-> using inclusion-exclusion via `lemma_set_intersect_union_lens`
-> against a universe-finite bridge via `lemma_int_range` and
-> `lemma_len_subset`, then `axiom_is_empty_len0` / `axiom_is_empty`
-> to extract the witness. Those constructs are not in the design
-> note. They are in the playbook entry for `ft_midpoint` — a
-> different exercise with a different proof obligation but the
-> same proof family. The agent recognised the inclusion-exclusion
-> family applied to a new situation and reused the pattern. This
-> is one data point on one proof family. It moves the
-> "designed vs discovered" axis from "untested, plausible caveat"
-> to "tested once, supports discovery within an established
-> family." It does not yet tell us whether the methodology
-> supports discovery on a proof family the playbook does not
-> already document; that is a separate test on a different
-> exercise.
+> methodology that supports discovery. Two exercises were set up
+> specifically to test the discovery half: `sensor_poll_honest`
+> (whose design note states the proof obligation and the informal
+> "why" but does not name lemmas, helper-set constructions, or
+> trigger annotations) and `counter_filler` (a counter_producer-shaped
+> cross-module exercise whose design note states the obligation only
+> and warns against copying the parent exercise's loop invariant).
+> Both verified in one attempt. The first produced a new helper
+> lemma `lemma_honest_supporter_exists` using inclusion-exclusion
+> via `lemma_set_intersect_union_lens` against a universe-finite
+> bridge via `lemma_int_range` and `lemma_len_subset`, then
+> `axiom_is_empty_len0` / `axiom_is_empty` to extract the witness.
+> The second produced a 4-conjunct target-bounded invariant in
+> place of the 6-conjunct counter-bounded form documented in the
+> playbook. In both cases, the agent recognised a proof family
+> the playbook already documented (from `ft_midpoint` and
+> `counter_producer` respectively) and adapted it to a new
+> obligation. Two data points, two distinct proof families.
+> Both subsequently audited (see the next bullet); the 1-attempt
+> claim survived under the hardened whitelist and with each
+> exercise's own prior playbook summary stripped from AGENTS.md.
+
+> **Witness-access hardening, an empirical probe, and an audit.**
+> The discovery-test framing above depends on the agent not
+> reading the operator-authored witness file (`exercises/<name>_witness.rs`,
+> the reference implementation used by `ralph/check-spec.sh` to
+> confirm the spec admits a model). The original implementer
+> tool whitelist granted generic `Read` and `Glob` with no path
+> qualifier, so the witness file was readable. A first attempt at
+> an invention test on a single-function exercise (`vec_swap`,
+> with a multiset-preservation postcondition the playbook did
+> not anchor) made this concrete: the agent's iter-1 commit
+> message read "port witness proof", and its self-authored
+> playbook entry recorded "the architect-owned witness file was
+> visible to the implementer and gave the proof skeleton verbatim.
+> For pure invention measurement, future exercises should hide
+> the witness." That entry — written by the agent, against its
+> own run — is the cleanest possible flagging of the gap. The
+> `DISALLOWED_TOOLS` list in `ralph/run-exercise.sh` was then
+> extended with `Read(**/*_witness*)`, `Read(**/*_witness/**)`,
+> `Glob` / `Grep` equivalents, and `Bash(cat|grep|rg|head|tail|ls *_witness*)`
+> patterns. An empirical probe (`scripts/probe-witness-deny.sh`)
+> invokes `claude -p` with the same disallowed-tools array and
+> asks the agent to read a witness file via six different paths;
+> each is blocked with an explicit permission denial, agent's
+> own verdict: "I was unable to read any of the witness file's
+> contents through any of the attempted methods." With the
+> hardened whitelist in place, two further runs followed: a
+> fresh-named invention test (`swap_multiset`, same spec as
+> `vec_swap`, hand-typed scaffold) verified in one attempt with
+> a proof structurally different from the witness's; and an
+> audit re-run of both prior discovery tests
+> (`sensor_poll_honest` and `counter_filler`) reset to spec-frozen
+> scaffold and with each exercise's own prior playbook entry
+> stripped from `AGENTS.md`. Both re-audits verified in one
+> attempt, with solutions structurally identical to the originals.
+> The discovery and invention claims hold under audit.
 
 ### What the loop got wrong (section 6 / limitations)
 
@@ -295,5 +331,14 @@ public commit:
   `lemma_honest_supporter_exists` via inclusion-exclusion
   recognised from the ft_midpoint playbook entry): `bbb8e69`
 - `sensor_poll_honest` DONE: `ad91c63`
+- `counter_filler` scaffold + witness (second discovery test, target-bounded loop): `d026237`
+- `counter_filler` DONE: `f0c9a2b`
+- `vec_swap` (invalidated invention test, witness was readable): `aad05c8` (scaffold) and `b7cd862` (DONE). Agent's iter-1 commit `6d7e6e2` is titled "port witness proof".
+- Whitelist hardening + `vec_swap_v2` (also invalidated, copy-paste error): `7586365`
+- `swap_multiset` (third invention attempt, clean): scaffold `f7f9a3d`, agent's iter-1 `678f267`, DONE `b00039a`
+- Empirical witness-deny probe + script: included in `54c42dc`. Run log under `logs/_probe/`.
+- `sensor_poll_honest` audit reset: `bc3054e`; audit DONE: `0371dca`
+- `counter_filler` audit reset: `4d35f5a`; audit DONE: `7447760`
+- Audit results commit (AGENTS.md playbook entries restored with `audit-confirmed 2026-05-18` tag): `cf31fe7`
 
 All on `main` at <https://github.com/ranjithkannank/verus-calibration>.
