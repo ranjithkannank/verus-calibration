@@ -91,6 +91,7 @@ case "$EXERCISE" in
   counter_filler) ATTEMPT_CAP=15 ;;
   vec_swap) ATTEMPT_CAP=25 ;;
   vec_swap_v2) ATTEMPT_CAP=25 ;;
+  swap_multiset) ATTEMPT_CAP=25 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 
