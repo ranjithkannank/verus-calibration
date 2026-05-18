@@ -1,0 +1,11 @@
+==================================
+ Ralph loop: sensor_poll_honest
+ Attempt cap: 20
+ Outer ceiling: 28
+ Dry-run: 0
+==================================
+
+--- iteration 1  |  state=WORK  |  attempts=0/20
+
+  > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
+  > log: logs/sensor_poll_honest/ralph/iter-1-work.log
