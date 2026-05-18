@@ -9,25 +9,3 @@
 
   > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
   > log: logs/sensor_poll_honest/ralph/iter-1-work.log
-  > exit: 0  (head of log:)
-      Done. The exercise verified on attempt 1.
-      
-      ## Summary
-      
-      - **Status:** `verus_passed` — 19 verified, 0 errors
-  > committed: 70b2bfa work: sensor_poll_honest iter-1
-
---- iteration 2  |  state=REVIEW  |  attempts=1/20
-
-  > role=REVIEW  model=claude-opus-4-7  agent=reviewer  allowed=ALLOWED_REVIEWER
-  > log: logs/sensor_poll_honest/ralph/iter-2-review.log
-  > exit: 0  (head of log:)
-      Review committed: **APPROVE**.
-      
-      Summary of audit:
-      - **Diff scope**: only `exercises/sensor_poll_honest/main.rs` changed; `fusion.rs` and `auth.rs` are byte-identical to the freeze.
-      - **Spec surface intact**: `poll`'s requires/ensures and both pre-existing `open spec fn`s (`project_intervals`, `reports_containing`) appear only as unchanged context.
-  > committed: d15bdc5 review: sensor_poll_honest iter-2
-
---- iteration 3  |  state=APPROVED  |  attempts=1/20
-DONE — sensor_poll_honest verified and approved.

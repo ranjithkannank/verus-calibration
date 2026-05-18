@@ -1,0 +1,358 @@
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:45:5
+   |
+45 | /     forall|i: int, j: int|
+46 | |         0 <= i < j < reports.len() ==> reports[i].sensor_id != reports[j].sensor_id
+   | |___________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:46:40
+   |
+46 |         0 <= i < j < reports.len() ==> reports[i].sensor_id != reports[j].sensor_id
+   |                                        ^^^^^^^^^^              ^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:58:5
+   |
+58 | /     forall|i: int|
+59 | |         0 <= i < reports.len() ==>
+60 | |             signature_valid(
+61 | |                 pk_of(reports[i].sensor_id),
+62 | |                 report_msg(reports[i]),
+63 | |                 reports[i].sig,
+64 | |             )
+   | |_____________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:61:23
+   |
+61 |                 pk_of(reports[i].sensor_id),
+   |                       ^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:74:9
+   |
+74 |         forall|i: int| 0 <= i < reports.len() ==> reports[i].sensor_id < n,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:74:51
+   |
+74 |         forall|i: int| 0 <= i < reports.len() ==> reports[i].sensor_id < n,
+   |                                                   ^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:108:26
+    |
+108 |                   let j0 = choose|j: int|
+    |  __________________________^
+109 | |                     0 <= j < i as int && reports@[j].sensor_id as int == s_id as int;
+    | |____________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:109:42
+    |
+109 |                     0 <= j < i as int && reports@[j].sensor_id as int == s_id as int;
+    |                                          ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:128:21
+    |
+128 |               assert(!(exists|j: int|
+    |  _____________________^
+129 | |                 0 <= j < old_i && reports@[j].sensor_id as int == s_ghost as int));
+    | |_________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:129:35
+    |
+129 |                 0 <= j < old_i && reports@[j].sensor_id as int == s_ghost as int));
+    |                                   ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:125:16
+    |
+125 |           assert(forall|j: int|
+    |  ________________^
+126 | |             0 <= j < old_i ==> reports@[j].sensor_id as int != s_ghost as int)
+    | |_____________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:126:32
+    |
+126 |             0 <= j < old_i ==> reports@[j].sensor_id as int != s_ghost as int)
+    |                                ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:136:9
+    |
+136 |         assert forall|j: int, k: int| 0 <= j < k < i as int implies
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:137:13
+    |
+137 |             reports@[j].sensor_id != reports@[k].sensor_id
+    |             ^^^^^^^^^^^              ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:160:20
+    |
+160 |                 if exists|j: int| 0 <= j < i as int && reports@[j].sensor_id as int == k {
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:160:56
+    |
+160 |                 if exists|j: int| 0 <= j < i as int && reports@[j].sensor_id as int == k {
+    |                                                        ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:161:30
+    |
+161 |                       let j0 = choose|j: int|
+    |  ______________________________^
+162 | |                         0 <= j < i as int && reports@[j].sensor_id as int == k;
+    | |______________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:162:46
+    |
+162 |                         0 <= j < i as int && reports@[j].sensor_id as int == k;
+    |                                              ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:92:13
+   |
+92 | /             forall|j: int, k: int| 0 <= j < k < i as int ==>
+93 | |                 reports@[j].sensor_id != reports@[k].sensor_id,
+   | |______________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/auth.rs:93:17
+   |
+93 |                 reports@[j].sensor_id != reports@[k].sensor_id,
+   |                 ^^^^^^^^^^^              ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:34:5
+   |
+34 |     forall|i: int| 0 <= i < intervals.len() ==> intervals[i].lo <= intervals[i].hi
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:34:49
+   |
+34 |     forall|i: int| 0 <= i < intervals.len() ==> intervals[i].lo <= intervals[i].hi
+   |                                                 ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:51:5
+   |
+51 | /     forall|i: int, j: int|
+52 | |         0 <= i < intervals.len() && 0 <= j < intervals.len()
+53 | |         && correct_at(i) && correct_at(j)
+54 | |             ==> intervals[i].lo <= intervals[j].hi
+   | |__________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:53:12
+   |
+53 |         && correct_at(i) && correct_at(j)
+   |            ^^^^^^^^^^^^^    ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:269:9
+    |
+269 | /         exists|p: Reading|
+270 | |             result.lo <= p && p <= result.hi
+271 | |                 && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat,
+    | |_________________________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:271:20
+    |
+271 |                 && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat,
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:56:9
+   |
+56 |         forall|i: int| 0 <= i < reports.len() ==> reports[i].sensor_id < n,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:56:51
+   |
+56 |         forall|i: int| 0 <= i < reports.len() ==> reports[i].sensor_id < n,
+   |                                                   ^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:66:17
+   |
+66 |               &&& exists|p: Reading|
+   |  _________________^
+67 | |                 interval.lo <= p && p <= interval.hi
+68 | |                 && reports_containing(reports@, p).len()
+69 | |                     >= reports.len() as nat - f as nat
+   | |______________________________________________________^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:68:20
+   |
+68 |                 && reports_containing(reports@, p).len()
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:99:13
+   |
+99 |             forall|k: int| 0 <= k < i as int ==> intervals@[k] == reports@[k].interval,
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:99:50
+   |
+99 |             forall|k: int| 0 <= k < i as int ==> intervals@[k] == reports@[k].interval,
+   |                                                  ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:116:25
+    |
+116 |           let p_witness = choose|p: Reading|
+    |  _________________________^
+117 | |             result.lo <= p && p <= result.hi
+118 | |             && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat;
+    | |_____________________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:118:16
+    |
+118 |             && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat;
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:152:13
+    |
+152 |             assert forall|x: int| (a + b).contains(x) implies u.contains(x) by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/main.rs:152:63
+    |
+152 |             assert forall|x: int| (a + b).contains(x) implies u.contains(x) by {
+    |                                                               ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:168:9
+    |
+168 |         forall|j: int| s.contains(j) ==> intervals[j].lo <= intervals[jm].lo,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:168:24
+    |
+168 |         forall|j: int| s.contains(j) ==> intervals[j].lo <= intervals[jm].lo,
+    |                        ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:179:9
+    |
+179 |         assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:179:31
+    |
+179 |         assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |                               ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:190:13
+    |
+190 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:190:35
+    |
+190 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |                                   ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:197:13
+    |
+197 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[jm2].lo by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:197:35
+    |
+197 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[jm2].lo by {
+    |                                   ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:216:9
+    |
+216 | /         exists|j: int|
+217 | |             0 <= j < intervals.len()
+218 | |             && intervals_containing(intervals, intervals[j].lo).len()
+219 | |                 >= intervals.len() - f,
+    | |______________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:218:48
+    |
+218 |             && intervals_containing(intervals, intervals[j].lo).len()
+    |                                                ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:236:9
+    |
+236 |         assert forall|k: int| s.contains(k)
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:236:31
+    |
+236 |         assert forall|k: int| s.contains(k)
+    |                               ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:315:18
+    |
+315 |           let jw = choose|jx: int|
+    |  __________________^
+316 | |             0 <= jx < intervals@.len()
+317 | |             && intervals_containing(intervals@, intervals@[jx].lo).len()
+318 | |                 >= intervals@.len() - f as nat;
+    | |______________________________________________^
+
+note:   trigger 1 of 1:
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:317:49
+    |
+317 |             && intervals_containing(intervals@, intervals@[jx].lo).len()
+    |                                                 ^^^^^^^^^^^^^^
+
+note: Verus printed one or more automatically chosen quantifier triggers
+      because it had low confidence in the chosen triggers.
+      To suppress these messages, do one of the following:
+        (1) manually annotate a single desired trigger using #[trigger]
+            (example: forall|i: int, j: int| f(i) && #[trigger] g(i) && #[trigger] h(j)),
+        (2) manually annotate multiple desired triggers using #![trigger ...]
+            (example: forall|i: int| #![trigger f(i)] #![trigger g(i)] f(i) && g(i)),
+        (3) accept the automatically chosen trigger using #![auto]
+            (example: forall|i: int, j: int| #![auto] f(i) && g(i) && h(j))
+        (4) use the --triggers-mode silent command-line option to suppress all printing of triggers.
+      (Note: triggers are used by the underlying SMT theorem prover to instantiate quantifiers;
+      the theorem prover instantiates a quantifier whenever some expression matches the
+      pattern specified by one of the quantifier's triggers.)
+   --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/sensor_poll_honest/fusion.rs:315:18
+    |
+315 |           let jw = choose|jx: int|
+    |  __________________^
+316 | |             0 <= jx < intervals@.len()
+317 | |             && intervals_containing(intervals@, intervals@[jx].lo).len()
+318 | |                 >= intervals@.len() - f as nat;
+    | |______________________________________________^
+
+verification results:: 16 verified, 0 errors

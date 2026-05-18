@@ -35,6 +35,19 @@ pub open spec fn reports_containing(reports: Seq<SensorReport>, p: Reading) -> S
         0 <= i < reports.len() && point_in_interval(p, reports[i].interval))
 }
 
+// --- Projection lemma -------------------------------------------------------
+//
+// The two sets are extensionally equal because
+// `project_intervals(reports)[i] == reports[i].interval` so the
+// membership predicate is identical up to substitution.
+
+proof fn lemma_reports_eq_intervals_containing(reports: Seq<SensorReport>, p: Reading)
+    ensures
+        reports_containing(reports, p)
+            =~= intervals_containing(project_intervals(reports), p),
+{
+}
+
 pub fn poll(reports: &Vec<SensorReport>, n: u32, f: u32) -> (result: Option<Interval>)
     requires
         reports.len() <= u32::MAX as nat,
@@ -62,7 +75,117 @@ pub fn poll(reports: &Vec<SensorReport>, n: u32, f: u32) -> (result: Option<Inte
         },
         result.is_none() ==> !distinct_sensors(reports@),
 {
-    unimplemented!()
+    // 1. Structural authentication.
+    if !check_distinct(reports, n) {
+        return None;
+    }
+
+    // 2. Combine `distinct_sensors` with the precondition
+    //    `all_signatures_valid` to get `valid_report_bundle`.
+    proof {
+        assert(valid_report_bundle(reports@));
+    }
+
+    // 3. Project: build a Vec<Interval> whose view equals
+    //    project_intervals(reports@).
+    let n_usize: usize = reports.len();
+    let mut intervals: Vec<Interval> = Vec::with_capacity(n_usize);
+    let mut i: usize = 0;
+    while i < n_usize
+        invariant
+            i <= n_usize,
+            n_usize == reports.len(),
+            intervals@.len() == i as nat,
+            forall|k: int| 0 <= k < i as int ==> intervals@[k] == reports@[k].interval,
+        decreases n_usize - i,
+    {
+        let iv = reports[i].interval;
+        intervals.push(iv);
+        i = i + 1;
+    }
+
+    proof {
+        assert(intervals@ =~= project_intervals(reports@));
+    }
+
+    // 4. Call marzullo.
+    let result = marzullo(&intervals, f);
+
+    // 5. Bridge from intervals-frame to reports-frame + honest-voter.
+    proof {
+        let p_witness = choose|p: Reading|
+            result.lo <= p && p <= result.hi
+            && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat;
+        assert(result.lo <= p_witness && p_witness <= result.hi);
+        assert(intervals_containing(intervals@, p_witness).len()
+            >= intervals.len() as nat - f as nat);
+
+        // Substitute intervals@ with project_intervals(reports@) extensionally.
+        assert(intervals_containing(intervals@, p_witness)
+            =~= intervals_containing(project_intervals(reports@), p_witness));
+        lemma_reports_eq_intervals_containing(reports@, p_witness);
+        assert(reports_containing(reports@, p_witness)
+            =~= intervals_containing(project_intervals(reports@), p_witness));
+        assert(reports_containing(reports@, p_witness).len()
+            >= reports.len() as nat - f as nat);
+
+        // ---- Honest-voter clause via inclusion-exclusion -------------------
+        // Let A = supporters of p_witness in `reports@`,
+        //     B = correct (honest) sensor indices.
+        // Both subsets of universe U = [0, n).
+        // |A| >= n - f, |B| >= n - f, |U| = n.
+        // |A ∪ B| <= n  and  |A ∪ B| + |A ∩ B| = |A| + |B|
+        // ⇒ |A ∩ B| >= 2(n - f) - n = n - 2f >= 1 (since n >= 2f + 1).
+        let a: Set<int> = reports_containing(reports@, p_witness);
+        let b: Set<int> = correct_indices(reports.len() as nat);
+        let nn: int = reports.len() as int;
+
+        lemma_int_range(0, nn);
+        let u: Set<int> = set_int_range(0, nn);
+
+        // A ⊆ U
+        assert forall|x: int| a.contains(x) implies u.contains(x) by {};
+        // B ⊆ U
+        assert forall|x: int| b.contains(x) implies u.contains(x) by {};
+        // A ∪ B ⊆ U
+        assert((a + b).subset_of(u)) by {
+            assert forall|x: int| (a + b).contains(x) implies u.contains(x) by {
+                assert(a.contains(x) || b.contains(x));
+            }
+        }
+
+        // Finiteness + bounds.
+        lemma_len_subset(a, u);
+        lemma_len_subset(b, u);
+        lemma_len_subset(a + b, u);
+
+        // Inclusion-exclusion.
+        lemma_set_intersect_union_lens(a, b);
+
+        // Arithmetic: |A ∩ B| >= 1.
+        assert(a.intersect(b).len() >= 1);
+        assert(a.intersect(b).finite()) by {
+            assert(a.intersect(b).subset_of(a));
+            lemma_len_subset(a.intersect(b), a);
+        }
+        assert(!a.intersect(b).is_empty()) by {
+            axiom_is_empty_len0(a.intersect(b));
+        }
+        axiom_is_empty(a.intersect(b));
+
+        // Extract a witness k from A ∩ B.
+        let k = choose|x: int| a.intersect(b).contains(x);
+        assert(a.intersect(b).contains(k));
+        assert(a.contains(k));
+        assert(b.contains(k));
+        // a.contains(k) ⇒ 0 <= k < reports.len() && point_in_interval(p_witness, reports[k].interval)
+        // b.contains(k) ⇒ 0 <= k < n && correct_at(k)
+        assert(0 <= k < reports.len());
+        assert(correct_at(k));
+        assert(point_in_interval(p_witness, reports@[k].interval));
+        // Existential discharged for both supporter and honest-voter clauses.
+    }
+    Some(result)
 }
 
 } // verus!
