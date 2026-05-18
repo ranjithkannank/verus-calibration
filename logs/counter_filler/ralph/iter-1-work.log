@@ -1,0 +1,12 @@
+Attempt 1 succeeded on first try:
+
+**Result:** `verification results:: 6 verified, 0 errors` — verus exited 0.
+
+**Summary of what I did:**
+1. **counter.rs** — ported the three exec bodies byte-identically from `counter_producer/counter.rs` (`new`: struct literal, `incr`: `self.value = self.value + 1`, `get`: `self.value`).
+2. **filler.rs** — adapted the snapshot+bound-preservation family from `counter_producer` to the target-bounded loop shape. Loop guard `c.get() < target`, four-conjunct invariant (`c.invariant()`, `c.value() <= target`, `c.bound() == old(c).bound()`, `target <= c.bound()`), `decreases target - c.value()`. The `target <= c.bound()` conjunct is the load-bearing one: it lets the guard `c.value() < target` discharge `incr`'s precondition.
+3. **main.rs** — three-call pipeline: `Counter::new(target)` → `fill_to(&mut c, target)` → `c.get()`.
+
+Appended the discovered cross-family-transfer pattern to AGENTS.md (no `start`, no `i`; replace `c.value() == start + i` with `c.value() <= target`; replace `start + n <= c.bound()` with `target <= c.bound()`).
+
+Status: `verus_passed`. Committed as `122cd65`. The only remaining diff in the tree is `logs/sensor_poll_honest/orchestrator.log` which was modified before this invocation and is outside my scope. Handing back to the orchestrator/reviewer.
