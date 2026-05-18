@@ -1,0 +1,19 @@
+Done. The exercise verified on attempt 1.
+
+## Summary
+
+- **Status:** `verus_passed` — 19 verified, 0 errors
+- **Sub-task tackled:** Sub-task 3 from the design (implement `poll`'s body, including the new honest-voter clause). Sub-tasks 1 and 2 (`fusion.rs` / `auth.rs`) were already complete.
+- **Approach:** Ported the `poll` body verbatim from `sensor_poll_signed/main.rs`, then added one helper lemma `lemma_honest_supporter_exists` that discharges the new clause via pigeonhole/inclusion–exclusion:
+  - `s = reports_containing(reports, p)` and `c = correct_indices(n)` are both subsets of `set_int_range(0, n)`.
+  - `lemma_set_intersect_union_lens(s, c)` + `s + c =~= s.union(c)` gives `|s ∩ c| + |s ∪ c| == |s| + |c|`.
+  - With `|s|, |c| >= n - f`, `|s ∪ c| <= n`, and `n >= 2f + 1`, the intersection has size ≥ 1.
+  - `axiom_is_empty_len0` / `axiom_is_empty` + `choose` extract the honest-witness `k`.
+- **Per-attempt protocol:**
+  - Raw output: `logs/sensor_poll_honest/raw/attempt-1.txt`
+  - Attempts log: `logs/sensor_poll_honest/attempts.md`
+  - Status token: `logs/sensor_poll_honest/status` → `verus_passed`
+  - Committed as `bbb8e69`: "sensor_poll_honest attempt-1: pigeonhole honest-voter clause"
+- **Discovered pattern** appended to `AGENTS.md` under a new `sensor_poll_honest` section.
+
+The only remaining unstaged change is in `logs/sensor_poll_signed/orchestrator.log`, which belongs to a different exercise and is outside this attempt's scope. Handing off to reviewer.

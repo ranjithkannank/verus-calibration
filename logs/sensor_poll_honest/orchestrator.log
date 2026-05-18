@@ -9,3 +9,9 @@
 
   > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
   > log: logs/sensor_poll_honest/ralph/iter-1-work.log
+  > exit: 0  (head of log:)
+      Done. The exercise verified on attempt 1.
+      
+      ## Summary
+      
+      - **Status:** `verus_passed` — 19 verified, 0 errors
