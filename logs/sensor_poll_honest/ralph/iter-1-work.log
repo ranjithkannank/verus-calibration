@@ -1,0 +1,13 @@
+Done. Attempt 1 for `sensor_poll_honest` succeeded on the first try.
+
+**Summary:**
+- Sub-task worked: #3 (implement `poll` in `main.rs`). Sub-tasks 1 and 2 (`fusion.rs`, `auth.rs`) were already filled in.
+- Approach: Ported the byte-equivalent `poll` skeleton from `sensor_poll_signed` (check_distinct → assert valid_bundle → project to `Vec<Interval>` → call `marzullo` → projection lemma bridge). Discharged the **new** honest-voter clause via inclusion-exclusion pigeonhole (exactly the `ft_midpoint::lemma_pigeonhole_*` pattern):
+  - `A = reports_containing(reports@, p)`, `|A| >= n-f`
+  - `B = correct_indices(n)`, `|B| >= n-f`
+  - Both subsets of `set_int_range(0, n)`; `lemma_set_intersect_union_lens(A,B)` gives `|A∩B| >= 2(n-f) - n = n-2f >= 1`
+  - `axiom_is_empty_len0` + `axiom_is_empty` extract a witness `k ∈ A∩B`, which is correct AND supports `p_witness`.
+- Verus result: `16 verified, 0 errors`, exit 0.
+- Status: `verus_passed`. Commit `e68bc46` pushed locally. Tree clean on `sensor_poll_honest` paths. Remaining untracked entries (`logs/_probe/`, `scripts/probe-witness-deny.sh`, `logs/swap_multiset/orchestrator.log`) are unrelated to this exercise.
+
+Handing back to the orchestrator for reviewer audit.
