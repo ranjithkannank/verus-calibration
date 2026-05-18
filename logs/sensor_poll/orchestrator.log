@@ -15,3 +15,15 @@
       - **Sub-task scope:** Tackled all three sub-tasks (1: port marzullo into `fusion.rs`, 2: implement `check_distinct` in `auth.rs`, 3: implement `poll` in `main.rs`) in attempt 1, since the design explicitly identified each as a near-verbatim port from an already-verified exercise.
       - **Result:** `verus exercises/sensor_poll/main.rs --crate-type=lib` → exit 0, `16 verified, 0 errors`.
       - **Status:** `verus_passed`, committed, ready for reviewer.
+  > committed: 8c765ef work: sensor_poll iter-1
+
+--- iteration 2  |  state=REVIEW  |  attempts=1/18
+
+  > role=REVIEW  model=claude-opus-4-7  agent=reviewer  allowed=ALLOWED_REVIEWER
+  > log: logs/sensor_poll/ralph/iter-2-review.log
+  > exit: 0  (head of log:)
+      Review complete. **Conclusion: APPROVE.**
+      
+      All five checklist items pass cleanly:
+      
+      1. **Spec clauses unchanged** — No diff hunk modifies any `requires` or `ensures` clause on `check_distinct`, `marzullo`, or `poll`. Only bodies (previously `unimplemented!()`) were replaced.
