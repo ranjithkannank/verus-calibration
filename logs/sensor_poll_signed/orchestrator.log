@@ -9,3 +9,9 @@
 
   > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
   > log: logs/sensor_poll_signed/ralph/iter-1-work.log
+  > exit: 0  (head of log:)
+      Done. Summary:
+      
+      - **Status**: `verus_passed` on attempt 1
+      - **Result**: `16 verified, 0 errors`
+      - **What was done**:

@@ -1,0 +1,12 @@
+Done. Summary:
+
+- **Status**: `verus_passed` on attempt 1
+- **Result**: `16 verified, 0 errors`
+- **What was done**:
+  - Sub-task 1: ported `marzullo` body and helpers verbatim into `fusion.rs`
+  - Sub-task 2: ported `check_distinct` bitmap-backed body verbatim into `auth.rs` (the new `sig` field is invisible to it)
+  - Sub-task 3: ported `poll` body from `sensor_poll/main.rs` with one extra `proof { assert(valid_report_bundle(reports@)); }` block after the `None` early-return — collapsing `distinct_sensors(reports@)` (from `check_distinct`'s ensures) with `all_signatures_valid(reports@)` (from the precondition, preserved because nothing mutates `reports`)
+- **Logs/commit**: `logs/sensor_poll_signed/attempts.md` written, `logs/sensor_poll_signed/status` set to `verus_passed`, `logs/sensor_poll_signed/raw/attempt-1.txt` captured, and committed as `sensor_poll_signed attempt-1: port bodies; verus passes 16/16`
+- **Discovered pattern**: appended a new section to `AGENTS.md` describing how the crypto trust boundary threads through pre → post without exec touch
+
+The stray `logs/sensor_poll/orchestrator.log` modification is from a different exercise (sensor_poll, not sensor_poll_signed) and not part of my work, so I left it untouched. The sensor_poll_signed tree is clean and committed.
