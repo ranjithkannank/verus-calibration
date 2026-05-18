@@ -54,15 +54,120 @@ quorum_cert combined, because of the message-round inductive
 reasoning. The harness changes to support multi-round protocols are
 their own undertaking on top.
 
-## "What's next" options as of 2026-05-17
+## VeruSAGE-Bench external-validity test
 
-Set of five directions the methodology could go from here, captured
-during a check-in after the multi-module work landed. Option 1
-*partially* done in this session — see `sensor_poll` exercise on
-`main`; honest scope below. Options 2-5 still open.
+**What it is.** 849-task benchmark across real distributed systems,
+OS kernels, and storage code, used by AutoVerus and VeruSAGE in their
+published evaluations (Microsoft Research). Pull a small set (3-5
+tasks initially), scaffold each in our spec-frozen / witness / tag
+pattern, run them through the autonomous loop, and report
+attempts-to-verify against AutoVerus's and VeruSAGE's numbers on the
+same tasks.
+
+**Why this matters.** Every exercise to date was either designed by
+us or ported from a textbook. The methodology's external validity —
+does it survive on tasks we didn't design? — is the load-bearing
+assumption under every other forward move on the methodology track.
+A positive result strengthens every prior claim; a negative result
+tells us what to fix before bigger investments like LSP.
+
+**What would need to be true to take it on.**
+
+- The harness needs to accept externally-supplied specs. Currently
+  every exercise has its design.md authored by us. A VeruSAGE-Bench
+  task arrives as just a spec; we'd write a design note from the
+  signature, then run the loop. The operator-authored witness step
+  applies the same way (write a reference impl, run check-spec.sh).
+- The task is small enough to fit the iteration cap. Some
+  VeruSAGE-Bench tasks may be larger than our typical exercise; we'd
+  pick smaller ones first and grow.
+- We're willing to publish negative results. If our methodology does
+  worse than AutoVerus on the same tasks, the right move is to
+  report that honestly, not to retry until it works.
+
+**Where it slots in.** Most natural next move on the methodology
+track. Should *precede* LSP and the larger composition work — if
+external validity doesn't hold on small VeruSAGE-Bench tasks, scaling
+to LSP-sized verification is premature.
+
+**Estimated cost.** Low for the first 3-5 tasks (a day of setup per
+task plus loop runtime). A full benchmark sweep would be larger, but
+the first tasks settle the methodology-survives-or-not question
+inexpensively.
+
+## Distributed-systems simulation + algorithm-variant tuning
+
+**What it is.** Take a verified primitive (e.g., `marzullo`,
+`sensor_poll_honest`), instantiate it as runnable code, run it inside
+a distributed simulator (`madsim`, `dslabs`, or a custom
+deterministic event simulator), inject realistic fault patterns
+(network partitions, asymmetric latency, Byzantine messages near
+the `n = 2f+1` boundary), measure behavior. Use the results to
+explore algorithm variants that are still provably correct but
+perform better under specific fault profiles.
+
+**Why deferred.** Orthogonal to the verification track.
+Verified-correct ≠ fault-tolerant-in-practice — a verified algorithm
+can satisfy `n >= 2f+1` and still degrade badly when `f` is exactly
+at threshold, when message latency varies asymmetrically across the
+quorum, or when adversarial scheduling exploits message ordering.
+Empirical simulation surfaces those gaps. But this is a different
+*kind* of work than verification: it's about runtime behavior, not
+spec satisfaction. Closer in spirit to the separate `bft_autotune`
+project than to `verus-calibration`.
+
+**What would need to be true to take it on.**
+
+- A distributed simulator picked (a deterministic event simulator
+  gives the cleanest scientific story; `madsim` is a candidate).
+- The verified primitives lifted into runnable code. Verus
+  generates Rust binaries from verified source; the lift is mostly
+  packaging + a small driver per primitive.
+- A scenario catalog (which fault patterns to test, what
+  behavioral metrics to measure). Behavioral metrics matter most:
+  agreement latency, message complexity, witness-quality under
+  partial faults.
+- A way to feed back into the verification track. If simulation
+  surfaces a variant that performs better, we'd want to re-verify
+  that variant — closing the empirical-to-verified loop is what
+  makes this directly relevant to the project's main goal.
+
+**Where it slots in.** Separate track. Possibly merged with
+`bft_autotune` rather than `verus-calibration` proper. Should not
+precede external-validity validation (VeruSAGE-Bench) on the
+methodology track — empirical work that depends on a methodology
+whose external validity is unproven is hard to scope.
+
+**Estimated cost.** Weeks to months for the simulator + first
+primitive instrumented. Per-experiment cost low once the harness
+exists.
+
+## "What's next" options as of 2026-05-18
+
+Originally captured 2026-05-17 as a check-in after the multi-module
+work landed; updated 2026-05-18 to reflect intervening completions
+and two new candidates.
+
+**Completed since 2026-05-17:**
+
+- Option 1(b) — `sensor_poll_signed`: signature trust boundary
+  threaded into the composition at the spec layer (see exercise on
+  `main`).
+- Option 4 — less-guided cross-module exercise: extended into two
+  deliberate discovery tests (`sensor_poll_honest`,
+  `counter_filler`), both 1-attempt successes, both audit-confirmed
+  under hardened whitelist on 2026-05-18.
+- *Bonus, not on the original list:* first invention test
+  (`swap_multiset`), on a proof family the playbook did not
+  document; 1-attempt success after two invalidated prior attempts
+  (witness leak + operator copy-paste error) that drove the
+  witness-deny ACL hardening.
+
+**Open from the 2026-05-17 list:**
 
 1. **Compose the existing BFT primitives into a small system.** —
-   *partially done 2026-05-17.* The `sensor_poll` exercise has a
+   *option 1(b) DONE 2026-05-17 as `sensor_poll_signed`. Options
+   1(a) and 1(c) still open.* The `sensor_poll` exercise has a
    verified end-to-end function (`poll`) whose correctness theorem
    spans the seam between two BFT-shaped primitives, via a
    projection lemma. The composition regime is demonstrated.
@@ -108,19 +213,32 @@ during a check-in after the multi-module work landed. Option 1
    certification considerations dominate. Off-topic for the
    autonomous-loop methodology work; it's an avionics-engineering
    project.
-4. **Less-guided cross-module exercise.** Same shape as
-   `counter_producer` but with a design note that gives the proof
-   obligation and *not* the loop invariant. Tests whether the
-   methodology supports discovery of bridging invariants, not just
-   execution of pre-named ones. Small. High signal per dollar on the
-   methodology side, no direct progress on the BFT goal.
-5. **Stop and ship.** Three follow-up post sources are drafted in
-   `writeup/`. Run the blog-writing agent against them, publish, see
-   what response the work gets, resume after. Fine fallback if other
-   options stall or attention is needed elsewhere.
+4. **Less-guided cross-module exercise.** — *DONE 2026-05-17 as
+   `counter_filler`; audit-confirmed 2026-05-18 under hardened
+   whitelist.* Extended also into `sensor_poll_honest` (different
+   proof family). Both 1-attempt successes. The discovery-vs-
+   execution caveat that motivated this option has two data points
+   on two proof families now.
+5. **Stop and ship.** *Partially in progress.* Both writeup drafts
+   (`composition-post.md`, `methodology-updates.md`) reframed
+   2026-05-18 as revision inputs for the existing May 10 and May 17
+   draft posts; the blog-writing agent prompt is queued.
 
-When picking back up: re-read this list, the multi-module post draft
-in `writeup/multi-module-post.md`, and the latest commit messages on
-`main`. The choice depends on what the goal in the moment is
-(advance the BFT problem → 1 or 2; learn more about the methodology
-→ 4; engage an audience → 5; build a physical demo → 3).
+**New candidates added 2026-05-18:**
+
+6. **VeruSAGE-Bench external-validity test.** See the dedicated
+   section above. Smallest commitment of the three new candidates;
+   most informative result for the methodology claim. Recommended
+   next move on the methodology track.
+7. **Distributed-systems simulation + algorithm-variant tuning.**
+   See the dedicated section above. Separate track from
+   `verus-calibration`; closer in spirit to `bft_autotune`. Should
+   not precede external-validity validation.
+
+When picking back up: re-read this list, the writeup drafts in
+`writeup/`, and the latest commit messages on `main`. The choice
+depends on what the goal in the moment is (advance the BFT problem
+verification → 2 or 1(a)/(c); validate the methodology externally
+→ 6; explore the empirical/performance angle → 7; engage an
+audience → 5 followed by selective publishing; build a physical
+demo → 3).
