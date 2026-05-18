@@ -27,3 +27,6 @@
       Summary of audit:
       - **Diff scope**: only `exercises/sensor_poll_honest/main.rs` changed; `fusion.rs` and `auth.rs` are byte-identical to the freeze.
       - **Spec surface intact**: `poll`'s requires/ensures and both pre-existing `open spec fn`s (`project_intervals`, `reports_containing`) appear only as unchanged context.
+  > committed: d15bdc5 review: sensor_poll_honest iter-2
+
+--- iteration 3  |  state=APPROVED  |  attempts=1/20
