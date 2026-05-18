@@ -19,7 +19,16 @@ pub fn fill_to(c: &mut Counter, target: u32)
         final(c).value() == target,
         final(c).bound() == old(c).bound(),
 {
-    unimplemented!()
+    while c.get() < target
+        invariant
+            c.invariant(),
+            c.value() <= target,
+            c.bound() == old(c).bound(),
+            target <= c.bound(),
+        decreases target - c.value()
+    {
+        c.incr();
+    }
 }
 
 } // verus!
