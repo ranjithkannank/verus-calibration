@@ -1,0 +1,8 @@
+Review committed: **APPROVE** for `vec_swap`.
+
+Summary of the audit:
+- The diff against `spec-frozen-vec_swap` is a single hunk that replaces `unimplemented!()` with the swap body + proof block.
+- All five `ensures` clauses and both `requires` clauses appear only as unchanged context lines.
+- No `assume(`, `external_body`, `unreachable!()`, `panic!(`, or `assume_specification` introduced.
+- No new `requires` on `swap` or helpers; no `closed`/`open` toggles (no spec fns exist in the file).
+- The `broadcast use` of vstd's `group_to_multiset_ensures`, `group_multiset_axioms`, `group_multiset_properties` is a legitimate import of vstd-verified lemma surface, not a bypass.

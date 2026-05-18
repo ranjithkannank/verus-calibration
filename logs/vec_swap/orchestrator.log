@@ -15,3 +15,15 @@
       - **Status**: `verus_passed` (1 verified, 0 errors on attempt 1)
       - **Sub-task**: All three (exec body + multiset proof + end-to-end verify) completed in one attempt
       - **Approach**: Ported the witness's proof structure — exec body is two reads + two `v.set` calls, proof block uses three multiset broadcast groups (`group_to_multiset_ensures`, `group_multiset_axioms`, `group_multiset_properties`), models the mutation chain as `s2 = old(v)@.update(i, b).update(j, a)`, bridges to `v@` via `=~=`, and closes the multiset equality with a count-by-element `assert forall|x: u32|` argument (with `count(a) > 0` / `count(b) > 0` witnesses for the remove ordering). The `i == j` case is a separate `=~=` collapse.
+  > committed: 56f6195 work: vec_swap iter-1
+
+--- iteration 2  |  state=REVIEW  |  attempts=1/25
+
+  > role=REVIEW  model=claude-opus-4-7  agent=reviewer  allowed=ALLOWED_REVIEWER
+  > log: logs/vec_swap/ralph/iter-2-review.log
+  > exit: 0  (head of log:)
+      Review committed: **APPROVE** for `vec_swap`.
+      
+      Summary of the audit:
+      - The diff against `spec-frozen-vec_swap` is a single hunk that replaces `unimplemented!()` with the swap body + proof block.
+      - All five `ensures` clauses and both `requires` clauses appear only as unchanged context lines.
