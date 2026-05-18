@@ -1,0 +1,328 @@
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/fusion.rs:32:5
+   |
+32 |     forall|i: int| 0 <= i < intervals.len() ==> intervals[i].lo <= intervals[i].hi
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/fusion.rs:32:49
+   |
+32 |     forall|i: int| 0 <= i < intervals.len() ==> intervals[i].lo <= intervals[i].hi
+   |                                                 ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/fusion.rs:49:5
+   |
+49 | /     forall|i: int, j: int|
+50 | |         0 <= i < intervals.len() && 0 <= j < intervals.len()
+51 | |         && correct_at(i) && correct_at(j)
+52 | |             ==> intervals[i].lo <= intervals[j].hi
+   | |__________________________________________________^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/fusion.rs:51:12
+   |
+51 |         && correct_at(i) && correct_at(j)
+   |            ^^^^^^^^^^^^^    ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/auth.rs:23:5
+   |
+23 | /     forall|i: int, j: int|
+24 | |         0 <= i < j < reports.len() ==> reports[i].sensor_id != reports[j].sensor_id
+   | |___________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/auth.rs:24:40
+   |
+24 |         0 <= i < j < reports.len() ==> reports[i].sensor_id != reports[j].sensor_id
+   |                                        ^^^^^^^^^^              ^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/fusion.rs:267:9
+    |
+267 | /         exists|p: Reading|
+268 | |             result.lo <= p && p <= result.hi
+269 | |                 && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat,
+    | |_________________________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/fusion.rs:269:20
+    |
+269 |                 && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat,
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/auth.rs:30:9
+   |
+30 |         forall|i: int| 0 <= i < reports.len() ==> reports[i].sensor_id < n,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/auth.rs:30:51
+   |
+30 |         forall|i: int| 0 <= i < reports.len() ==> reports[i].sensor_id < n,
+   |                                                   ^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/main.rs:53:9
+   |
+53 |         forall|i: int| 0 <= i < reports.len() ==> reports[i].sensor_id < n,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/main.rs:53:51
+   |
+53 |         forall|i: int| 0 <= i < reports.len() ==> reports[i].sensor_id < n,
+   |                                                   ^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/main.rs:61:17
+   |
+61 |               &&& exists|p: Reading|
+   |  _________________^
+62 | |                 interval.lo <= p && p <= interval.hi
+63 | |                 && reports_containing(reports@, p).len()
+64 | |                     >= reports.len() as nat - f as nat
+   | |______________________________________________________^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/main.rs:63:20
+   |
+63 |                 && reports_containing(reports@, p).len()
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/main.rs:83:13
+   |
+83 |             forall|k: int| 0 <= k < i as int ==> intervals@[k] == reports@[k].interval,
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/main.rs:83:50
+   |
+83 |             forall|k: int| 0 <= k < i as int ==> intervals@[k] == reports@[k].interval,
+   |                                                  ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/main.rs:101:25
+    |
+101 |           let p_witness = choose|p: Reading|
+    |  _________________________^
+102 | |             result.lo <= p && p <= result.hi
+103 | |             && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat;
+    | |_____________________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/main.rs:103:16
+    |
+103 |             && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat;
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/auth.rs:64:26
+   |
+64 |                   let j0 = choose|j: int|
+   |  __________________________^
+65 | |                     0 <= j < i as int && reports@[j].sensor_id as int == s_id as int;
+   | |____________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/auth.rs:65:42
+   |
+65 |                     0 <= j < i as int && reports@[j].sensor_id as int == s_id as int;
+   |                                          ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/auth.rs:84:21
+   |
+84 |               assert(!(exists|j: int|
+   |  _____________________^
+85 | |                 0 <= j < old_i && reports@[j].sensor_id as int == s_ghost as int));
+   | |_________________________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/auth.rs:85:35
+   |
+85 |                 0 <= j < old_i && reports@[j].sensor_id as int == s_ghost as int));
+   |                                   ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/auth.rs:81:16
+   |
+81 |           assert(forall|j: int|
+   |  ________________^
+82 | |             0 <= j < old_i ==> reports@[j].sensor_id as int != s_ghost as int)
+   | |_____________________________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/auth.rs:82:32
+   |
+82 |             0 <= j < old_i ==> reports@[j].sensor_id as int != s_ghost as int)
+   |                                ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/auth.rs:92:9
+   |
+92 |         assert forall|j: int, k: int| 0 <= j < k < i as int implies
+   |         ^^^^^^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/auth.rs:93:13
+   |
+93 |             reports@[j].sensor_id != reports@[k].sensor_id
+   |             ^^^^^^^^^^^              ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/auth.rs:116:20
+    |
+116 |                 if exists|j: int| 0 <= j < i as int && reports@[j].sensor_id as int == k {
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/auth.rs:116:56
+    |
+116 |                 if exists|j: int| 0 <= j < i as int && reports@[j].sensor_id as int == k {
+    |                                                        ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/auth.rs:117:30
+    |
+117 |                       let j0 = choose|j: int|
+    |  ______________________________^
+118 | |                         0 <= j < i as int && reports@[j].sensor_id as int == k;
+    | |______________________________________________________________________________^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/auth.rs:118:46
+    |
+118 |                         0 <= j < i as int && reports@[j].sensor_id as int == k;
+    |                                              ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+  --> exercises/sensor_poll/auth.rs:48:13
+   |
+48 | /             forall|j: int, k: int| 0 <= j < k < i as int ==>
+49 | |                 reports@[j].sensor_id != reports@[k].sensor_id,
+   | |______________________________________________________________^
+
+note:   trigger 1 of 1:
+  --> exercises/sensor_poll/auth.rs:49:17
+   |
+49 |                 reports@[j].sensor_id != reports@[k].sensor_id,
+   |                 ^^^^^^^^^^^              ^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/fusion.rs:166:9
+    |
+166 |         forall|j: int| s.contains(j) ==> intervals[j].lo <= intervals[jm].lo,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/fusion.rs:166:24
+    |
+166 |         forall|j: int| s.contains(j) ==> intervals[j].lo <= intervals[jm].lo,
+    |                        ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/fusion.rs:177:9
+    |
+177 |         assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/fusion.rs:177:31
+    |
+177 |         assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |                               ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/fusion.rs:188:13
+    |
+188 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/fusion.rs:188:35
+    |
+188 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[j0].lo by {
+    |                                   ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/fusion.rs:195:13
+    |
+195 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[jm2].lo by {
+    |             ^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/fusion.rs:195:35
+    |
+195 |             assert forall|j: int| s.contains(j) implies intervals[j].lo <= intervals[jm2].lo by {
+    |                                   ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/fusion.rs:214:9
+    |
+214 | /         exists|j: int|
+215 | |             0 <= j < intervals.len()
+216 | |             && intervals_containing(intervals, intervals[j].lo).len()
+217 | |                 >= intervals.len() - f,
+    | |______________________________________^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/fusion.rs:216:48
+    |
+216 |             && intervals_containing(intervals, intervals[j].lo).len()
+    |                                                ^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/fusion.rs:234:9
+    |
+234 |         assert forall|k: int| s.contains(k)
+    |         ^^^^^^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/fusion.rs:234:31
+    |
+234 |         assert forall|k: int| s.contains(k)
+    |                               ^^^^^^^^^^^^^
+
+note: automatically chose triggers for this expression:
+   --> exercises/sensor_poll/fusion.rs:313:18
+    |
+313 |           let jw = choose|jx: int|
+    |  __________________^
+314 | |             0 <= jx < intervals@.len()
+315 | |             && intervals_containing(intervals@, intervals@[jx].lo).len()
+316 | |                 >= intervals@.len() - f as nat;
+    | |______________________________________________^
+
+note:   trigger 1 of 1:
+   --> exercises/sensor_poll/fusion.rs:315:49
+    |
+315 |             && intervals_containing(intervals@, intervals@[jx].lo).len()
+    |                                                 ^^^^^^^^^^^^^^
+
+note: Verus printed one or more automatically chosen quantifier triggers
+      because it had low confidence in the chosen triggers.
+      To suppress these messages, do one of the following:
+        (1) manually annotate a single desired trigger using #[trigger]
+            (example: forall|i: int, j: int| f(i) && #[trigger] g(i) && #[trigger] h(j)),
+        (2) manually annotate multiple desired triggers using #![trigger ...]
+            (example: forall|i: int| #![trigger f(i)] #![trigger g(i)] f(i) && g(i)),
+        (3) accept the automatically chosen trigger using #![auto]
+            (example: forall|i: int, j: int| #![auto] f(i) && g(i) && h(j))
+        (4) use the --triggers-mode silent command-line option to suppress all printing of triggers.
+      (Note: triggers are used by the underlying SMT theorem prover to instantiate quantifiers;
+      the theorem prover instantiates a quantifier whenever some expression matches the
+      pattern specified by one of the quantifier's triggers.)
+   --> exercises/sensor_poll/fusion.rs:313:18
+    |
+313 |           let jw = choose|jx: int|
+    |  __________________^
+314 | |             0 <= jx < intervals@.len()
+315 | |             && intervals_containing(intervals@, intervals@[jx].lo).len()
+316 | |                 >= intervals@.len() - f as nat;
+    | |______________________________________________^
+
+verification results:: 16 verified, 0 errors

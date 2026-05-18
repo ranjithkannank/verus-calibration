@@ -32,6 +32,19 @@ pub open spec fn reports_containing(reports: Seq<SensorReport>, p: Reading) -> S
         0 <= i < reports.len() && point_in_interval(p, reports[i].interval))
 }
 
+// --- Projection lemma -------------------------------------------------------
+//
+// The two sets are extensionally equal because
+// `project_intervals(reports)[i] == reports[i].interval` so the
+// membership predicate is identical up to substitution.
+
+proof fn lemma_reports_eq_intervals_containing(reports: Seq<SensorReport>, p: Reading)
+    ensures
+        reports_containing(reports, p)
+            =~= intervals_containing(project_intervals(reports), p),
+{
+}
+
 pub fn poll(reports: &Vec<SensorReport>, n: u32, f: u32) -> (result: Option<Interval>)
     requires
         reports.len() <= u32::MAX as nat,
@@ -52,7 +65,55 @@ pub fn poll(reports: &Vec<SensorReport>, n: u32, f: u32) -> (result: Option<Inte
         },
         result.is_none() ==> !distinct_sensors(reports@),
 {
-    unimplemented!()
+    // 1. Structural authentication.
+    if !check_distinct(reports, n) {
+        return None;
+    }
+
+    // 2. Project: build a Vec<Interval> whose view equals
+    //    project_intervals(reports@).
+    let n_usize: usize = reports.len();
+    let mut intervals: Vec<Interval> = Vec::with_capacity(n_usize);
+    let mut i: usize = 0;
+    while i < n_usize
+        invariant
+            i <= n_usize,
+            n_usize == reports.len(),
+            intervals@.len() == i as nat,
+            forall|k: int| 0 <= k < i as int ==> intervals@[k] == reports@[k].interval,
+        decreases n_usize - i,
+    {
+        let iv = reports[i].interval;
+        intervals.push(iv);
+        i = i + 1;
+    }
+
+    proof {
+        assert(intervals@ =~= project_intervals(reports@));
+    }
+
+    // 3. Call marzullo. We need to re-establish its preconditions
+    //    via the equality intervals@ == project_intervals(reports@).
+    let result = marzullo(&intervals, f);
+
+    // 4. Bridge from intervals-frame to reports-frame.
+    proof {
+        let p_witness = choose|p: Reading|
+            result.lo <= p && p <= result.hi
+            && intervals_containing(intervals@, p).len() >= intervals.len() as nat - f as nat;
+        assert(result.lo <= p_witness && p_witness <= result.hi);
+        assert(intervals_containing(intervals@, p_witness).len()
+            >= intervals.len() as nat - f as nat);
+        // Substitute intervals@ with project_intervals(reports@) extensionally.
+        assert(intervals_containing(intervals@, p_witness)
+            =~= intervals_containing(project_intervals(reports@), p_witness));
+        lemma_reports_eq_intervals_containing(reports@, p_witness);
+        assert(reports_containing(reports@, p_witness)
+            =~= intervals_containing(project_intervals(reports@), p_witness));
+        assert(reports_containing(reports@, p_witness).len()
+            >= reports.len() as nat - f as nat);
+    }
+    Some(result)
 }
 
 } // verus!
