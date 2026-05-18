@@ -53,3 +53,45 @@ alone is plausibly comparable to the entire calibration plus
 quorum_cert combined, because of the message-round inductive
 reasoning. The harness changes to support multi-round protocols are
 their own undertaking on top.
+
+## "What's next" options as of 2026-05-17
+
+Set of five directions the methodology could go from here, captured
+during a check-in after the multi-module work landed. Currently
+pursuing option 1; others kept here for later.
+
+1. **Compose the existing BFT primitives into a small system.**
+   `quorum_cert`, `ft_midpoint`, and `marzullo` are verified but
+   uncomposed. A verified Byzantine-tolerant sensor poll that uses
+   the quorum-style structural check to authenticate signed sensor
+   reports and then runs `ft_midpoint` or `marzullo` on the
+   authenticated values would be the first end-to-end *system* on
+   the path. Multi-module by necessity, with a composition theorem
+   that spans the seam between two primitives. Bounded scope, novel
+   regime (system-level integration), directly advances the original
+   goal.
+2. **Verified Byzantine agreement.** See the entry above. Multi-round
+   messaging, larger scope, comparable to `quorum_cert` or
+   `ft_midpoint` in complexity, distinct verification regime.
+3. **Hardware deployment.** Take the existing sensor-fusion algorithms
+   and run them on dissimilar redundant boards (Pi + BeagleBone +
+   STM32) with live fault injection. Multi-week. Real-time and
+   certification considerations dominate. Off-topic for the
+   autonomous-loop methodology work; it's an avionics-engineering
+   project.
+4. **Less-guided cross-module exercise.** Same shape as
+   `counter_producer` but with a design note that gives the proof
+   obligation and *not* the loop invariant. Tests whether the
+   methodology supports discovery of bridging invariants, not just
+   execution of pre-named ones. Small. High signal per dollar on the
+   methodology side, no direct progress on the BFT goal.
+5. **Stop and ship.** Three follow-up post sources are drafted in
+   `writeup/`. Run the blog-writing agent against them, publish, see
+   what response the work gets, resume after. Fine fallback if other
+   options stall or attention is needed elsewhere.
+
+When picking back up: re-read this list, the multi-module post draft
+in `writeup/multi-module-post.md`, and the latest commit messages on
+`main`. The choice depends on what the goal in the moment is
+(advance the BFT problem → 1 or 2; learn more about the methodology
+→ 4; engage an audience → 5; build a physical demo → 3).
