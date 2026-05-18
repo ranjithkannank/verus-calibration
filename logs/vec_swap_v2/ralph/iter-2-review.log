@@ -1,0 +1,3 @@
+Review committed as APPROVE.
+
+The diff between `spec-frozen-vec_swap_v2` and HEAD for `exercises/vec_swap_v2.rs` is empty — the file at HEAD is byte-identical to the frozen baseline. All five checklist items pass trivially. I flagged in the reviewer notes that the scaffold shipped with the complete proof (per the implementer's own attempts log), so the operator may want to revisit whether this counts as an invention data point — but that is a separate experiment-design question from the audit, which is clean.
