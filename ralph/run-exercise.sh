@@ -87,6 +87,7 @@ case "$EXERCISE" in
   counter_producer) ATTEMPT_CAP=12 ;;
   sensor_poll) ATTEMPT_CAP=18 ;;
   sensor_poll_signed) ATTEMPT_CAP=18 ;;
+  sensor_poll_honest) ATTEMPT_CAP=20 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 
