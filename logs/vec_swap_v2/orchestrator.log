@@ -1,0 +1,11 @@
+==================================
+ Ralph loop: vec_swap_v2
+ Attempt cap: 25
+ Outer ceiling: 33
+ Dry-run: 0
+==================================
+
+--- iteration 1  |  state=WORK  |  attempts=0/25
+
+  > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
+  > log: logs/vec_swap_v2/ralph/iter-1-work.log
