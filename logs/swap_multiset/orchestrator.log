@@ -9,3 +9,9 @@
 
   > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
   > log: logs/swap_multiset/ralph/iter-1-work.log
+  > exit: 0  (head of log:)
+      Attempt 1 succeeded. Summary:
+      
+      - **Status:** `verus_passed` (1 verified, 0 errors)
+      - **Approach:** Reads + index-set assignments, then a proof block that brings in the `vstd::seq_lib::group_to_multiset_ensures` broadcast group. The load-bearing lemma is `to_multiset_update` (`s.update(i,a).to_multiset() == s.to_multiset().insert(a).remove(s[i])`). Two updates reduce the multiset to `m.insert(a).remove(b).insert(b).remove(a)`, and `=~=` (extensional equality on `Multiset`) closes the obligation pointwise.
+      - **Invention test:** Solved without reading the witness file or the invalidated `vec_swap.rs`/`vec_swap_v2.rs`. The proof family was located by grepping vstd's `seq_lib.rs` and `multiset.rs` for `to_multiset` and the multiset broadcast groups.
