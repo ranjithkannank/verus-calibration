@@ -1,0 +1,13 @@
+Review complete and committed.
+
+**Conclusion: APPROVE**
+
+All five audit checks passed:
+
+1. **Spec clauses unchanged** — The `requires`/`ensures` block of `poll` (lines 51–76) appears only as context in the diff; no `+`/`-` lines touch it. `auth.rs` and `fusion.rs` have no diff.
+2. **Pre-existing spec fn bodies unchanged** — `project_intervals` and `reports_containing` are unmodified context.
+3. **No bypass tokens** — The diff *removes* `unimplemented!()` and introduces no `assume(`, `#[verifier::external_body]`, `unreachable!()`, or `panic!(`. Only `assert`/`assert forall`/lemma calls were added.
+4. **No trivializing requires** — The new helper lemma has only an `ensures` clause; `poll` gains no new `requires`.
+5. **No closed/open toggles** — Both pre-existing `pub open spec fn`s remain open; the new helper is a `proof fn`.
+
+The body is a clean inclusion-exclusion proof at `A = reports_containing`, `B = correct_indices`, `U = [0, n)`, plus an empty-body extensional-equality projection lemma. Committed as `2415a75`.
