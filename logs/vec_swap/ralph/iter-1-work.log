@@ -1,0 +1,7 @@
+Done. Summary:
+
+- **Status**: `verus_passed` (1 verified, 0 errors on attempt 1)
+- **Sub-task**: All three (exec body + multiset proof + end-to-end verify) completed in one attempt
+- **Approach**: Ported the witness's proof structure — exec body is two reads + two `v.set` calls, proof block uses three multiset broadcast groups (`group_to_multiset_ensures`, `group_multiset_axioms`, `group_multiset_properties`), models the mutation chain as `s2 = old(v)@.update(i, b).update(j, a)`, bridges to `v@` via `=~=`, and closes the multiset equality with a count-by-element `assert forall|x: u32|` argument (with `count(a) > 0` / `count(b) > 0` witnesses for the remove ordering). The `i == j` case is a separate `=~=` collapse.
+- **Pattern appended to AGENTS.md** under `### vec_swap (attempt 1, success)` documenting the multiset-preservation-under-mutation proof family.
+- Tree clean, committed as `6d7e6e2`.
