@@ -1,0 +1,11 @@
+==================================
+ Ralph loop: sensor_poll_signed
+ Attempt cap: 18
+ Outer ceiling: 26
+ Dry-run: 0
+==================================
+
+--- iteration 1  |  state=WORK  |  attempts=0/18
+
+  > role=WORK  model=claude-opus-4-7  agent=implementer  allowed=ALLOWED_IMPLEMENTER
+  > log: logs/sensor_poll_signed/ralph/iter-1-work.log
