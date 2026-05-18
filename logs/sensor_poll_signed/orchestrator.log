@@ -27,3 +27,6 @@
       All five checklist items pass:
       1. Frozen `requires`/`ensures` clauses on `check_distinct`, `marzullo`, and `poll` are byte-identical — only their bodies (previously `unimplemented!()`) were filled in.
       2. No pre-existing `spec fn` body was modified; `containing_upto` is a new proof-only helper.
+  > committed: 894bc1d review: sensor_poll_signed iter-2
+
+--- iteration 3  |  state=APPROVED  |  attempts=1/18
