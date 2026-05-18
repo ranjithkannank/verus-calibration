@@ -34,7 +34,40 @@ pub fn swap(v: &mut Vec<u32>, i: usize, j: usize)
                 final(v)@[k] == old(v)@[k],
         final(v)@.to_multiset() == old(v)@.to_multiset(),
 {
-    unimplemented!()
+    let tmp: u32 = v[i];
+    let v_j: u32 = v[j];
+    v.set(i, v_j);
+    v.set(j, tmp);
+    proof {
+        broadcast use group_to_multiset_ensures, group_multiset_axioms,
+            group_multiset_properties;
+        let m = old(v)@.to_multiset();
+        let s1 = old(v)@.update(i as int, old(v)@[j as int]);
+        let s2 = s1.update(j as int, old(v)@[i as int]);
+        assert(v@ =~= s2);
+
+        if i == j {
+            assert(s1 =~= old(v)@);
+            assert(s2 =~= old(v)@);
+        } else {
+            assert(s1[j as int] == old(v)@[j as int]);
+            let a = old(v)@[i as int];
+            let b = old(v)@[j as int];
+            assert forall|x: u32|
+                #[trigger] s2.to_multiset().count(x) == m.count(x)
+            by {
+                assert(old(v)@.contains(a)) by {
+                    assert(old(v)@[i as int] == a);
+                }
+                assert(old(v)@.contains(b)) by {
+                    assert(old(v)@[j as int] == b);
+                }
+                assert(m.count(a) > 0);
+                assert(m.count(b) > 0);
+            }
+            assert(s2.to_multiset() =~= m);
+        }
+    }
 }
 
 } // verus!
