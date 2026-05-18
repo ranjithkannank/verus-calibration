@@ -27,3 +27,6 @@
       All five checklist items pass cleanly:
       
       1. **Spec clauses unchanged** — No diff hunk modifies any `requires` or `ensures` clause on `check_distinct`, `marzullo`, or `poll`. Only bodies (previously `unimplemented!()`) were replaced.
+  > committed: 053614e review: sensor_poll iter-2
+
+--- iteration 3  |  state=APPROVED  |  attempts=1/18
