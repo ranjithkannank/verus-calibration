@@ -1,47 +1,60 @@
 # verus-calibration
 
-A weekend experiment: how reliably can an autonomous coding loop produce
-**formally verified** Verus code without cheating?
+Started as a weekend experiment: how reliably can an autonomous coding
+loop produce **formally verified** Verus code without cheating? Now an
+ongoing track toward making verified Byzantine-tolerant systems
+cheaper to build for safety-critical applications.
 
-Three Verus exercises of increasing difficulty, run through a Ralph-style
-autonomous loop with two separate boundaries forbidding the agent from
-weakening specs or bypassing the verifier. The goal is four numbers:
-
-- First-try success rate
-- Attempts to convergence on the rest
-- Tokens per verified function
-- A taxonomy of recurring failure modes
-
-The methodology and results land as two posts in an ongoing series on
-autonomous-loop trust infrastructure (mutation testing → audit/decision
-split → integration contracts → **vericoding as proof-grade feedback**).
+Verus exercises run through a Ralph-style autonomous loop with three
+boundaries that forbid the agent from weakening specs, bypassing the
+verifier, or reading operator-authored reference implementations: a
+git pre-commit hook, a Claude Code tool whitelist, and an
+operator-authored witness file gated behind explicit deny patterns.
 
 ## Status
 
-The original three exercises landed `DONE` (verus passed + reviewer
-`APPROVE`). Calibration is complete; the writeup is published.
+16 exercises DONE on `main` (verus passed + reviewer `APPROVE`).
+The original three calibration tasks landed first; the track has
+since extended into Byzantine-tolerant primitives, multi-module
+composition, deliberate discovery tests on the methodology itself,
+and a first invention test on a proof family the playbook did not
+document.
 
-**Blog post:** [Wiring a Formal Verifier into an Autonomous Coding
-Loop](https://ranjithkannan.com/2026/05/10/verus-calibration-formal-verifier-loop/)
-on ranjithkannan.com.
+**Blog posts (in draft, not yet shared externally):**
 
-The repo is now being extended toward the actual problem the
-calibration was preparation for: making verified Byzantine-tolerant
-systems cheaper to build for safety-critical applications. The first
-step on that path is a fourth exercise, `quorum_cert`, currently in
-progress.
+- [Wiring a Formal Verifier into an Autonomous Coding Loop](https://ranjithkannan.com/2026/05/10/verus-calibration-formal-verifier-loop/)
+  — methodology baseline, calibration-era. Currently being revised
+  with the methodology refinements landed since publication (see
+  `writeup/methodology-updates.md`).
+- [Verified Byzantine-Tolerant Sensor Fusion](https://ranjithkannan.com/2026/05/17/verified-byzantine-tolerant-sensor-fusion/)
+  — BFT-track primitives (ft_midpoint, marzullo). Currently being
+  revised to absorb the composition track (see
+  `writeup/composition-post.md`).
 
-| Exercise         | Status | Attempts to verify | Notes                                          |
-|------------------|--------|--------------------|------------------------------------------------|
-| binary_search    | DONE   | 1                  | Clean first-try; architect's design predicted every invariant. |
-| bounded_log      | DONE   | 1 (post re-freeze) | Surfaced a Verus version mismatch in the operator-authored frozen spec; the reviewer's REJECT was the methodology working as intended. |
-| quorum_count     | DONE   | 2                  | Concrete-to-abstract proof bridge; implementer grepped local `vstd` and wrote a recursive cardinality lemma. |
-| quorum_cert      | DONE   | 6                  | First BFT-shaped exercise. Structural exec verification + safety lemma about honest voters. Six narrow iterations through the architect's sub-task list; surfaced the pigeonhole-via-contradiction pattern and `vstd::arithmetic::div_mod::lemma_fundamental_div_mod` for threshold arithmetic. |
-| ft_midpoint      | DONE   | 7                  | Schmid-Schossmaier fault-tolerant midpoint. Brute-force-scan algorithm with inclusion-exclusion pigeonhole proof; surfaced `lemma_set_intersect_union_lens` as the direct cardinality primitive and the `assert(false)` + concrete return pattern for provably-unreachable tails. |
-| marzullo         | scaffolded | —              | Interval variant of sensor fusion. Output is an `Interval` whose interior contains a point supported by ≥ n-f input intervals. Reuses ft_midpoint's proof patterns. |
+Exercise inventory and per-exercise notes live in `AGENTS.md`
+(authoritative exercise order + the discovered-patterns playbook).
+Snapshot of the verified set:
 
-The full narrative lives in `writeup/blog-post.md` (publication-ready)
-and `writeup/writeup.md` (raw run record).
+| Track                 | Exercises                                                                                              | Total |
+|-----------------------|---------------------------------------------------------------------------------------------------------|-------|
+| Calibration           | `binary_search`, `bounded_log`, `quorum_count`                                                          | 3     |
+| BFT primitives        | `quorum_cert`, `ft_midpoint`, `marzullo`                                                                | 3     |
+| Multi-module          | `cross_module_counter`, `counter_multifile`, `counter_producer`                                         | 3     |
+| Composition           | `sensor_poll`, `sensor_poll_signed`, `sensor_poll_honest`                                               | 3     |
+| Discovery tests       | `sensor_poll_honest` (also above), `counter_filler`                                                     | 2     |
+| Invention test        | `swap_multiset`                                                                                         | 1     |
+| Invalidated (evidence)| `vec_swap`, `vec_swap_v2` — kept on disk + tagged, see methodology-refinements section                  | 2     |
+
+The discovery and invention tests were re-audited on 2026-05-18
+under a hardened tool whitelist that explicitly denies the agent
+reading the operator-authored witness file; both discovery claims
+verified in one attempt again with the agent's own prior playbook
+summary stripped from `AGENTS.md` (re-added with an
+`audit-confirmed` tag after the re-run passed).
+
+Forward-looking items live in `BACKLOG.md`. The original calibration
+post and raw run record sit in `writeup/blog-post.md` and
+`writeup/writeup.md`.
 
 ## Quickstart
 
@@ -71,34 +84,56 @@ state by reading filesystem artifacts.
 ```
 verus-calibration/
 ├── README.md
-├── AGENTS.md              shared rules every agent reads
+├── AGENTS.md              shared rules + exercise order + discovered-patterns playbook
 ├── ORCHESTRATION.md       state machine, prompts, cost discipline
+├── BACKLOG.md             deferred work + "what's next" decision record
 ├── exercises/
-│   ├── binary_search.rs   exercise 1: frozen spec, unimplemented body
-│   ├── bounded_log.rs     exercise 2: frame property on append
-│   ├── quorum_count.rs    exercise 3: distinct-count vs Set::len()
-│   ├── quorum_cert.rs     exercise 4: BFT quorum certificate + safety lemma
-│   ├── ft_midpoint.rs     exercise 5: sensor-fusion fault-tolerant midpoint
-│   └── marzullo.rs        exercise 6: Marzullo's algorithm (interval form)
+│   ├── binary_search.rs           calibration exercise 1
+│   ├── bounded_log.rs             calibration exercise 2
+│   ├── quorum_count.rs            calibration exercise 3
+│   ├── quorum_cert.rs             BFT quorum certificate + safety lemma
+│   ├── ft_midpoint.rs             sensor-fusion fault-tolerant midpoint
+│   ├── marzullo.rs                Marzullo's algorithm (interval form)
+│   ├── cross_module_counter.rs    single-file multi-module exercise
+│   ├── counter_multifile/         first multi-file exercise (sibling .rs files)
+│   ├── counter_producer/          cross-module composition; producer's loop invariant
+│   ├── counter_filler/            second deliberate discovery test (target-bounded loop)
+│   ├── sensor_poll/               composition demonstration (port marzullo + auth)
+│   ├── sensor_poll_signed/        signature trust boundary at the spec layer
+│   ├── sensor_poll_honest/        first deliberate discovery test (honest-voter clause)
+│   ├── swap_multiset.rs           first invention test (multiset preservation)
+│   ├── vec_swap.rs                INVALIDATED invention test #1 (witness was readable)
+│   ├── vec_swap_v2.rs             INVALIDATED invention test #2 (operator copy-paste error)
+│   └── *_witness.rs / *_witness/  operator-authored reference impls (denied to the agent)
 ├── .claude/agents/
 │   ├── architect.md       Opus 4.7 — design, no Edit, no Bash(verus)
-│   ├── implementer.md     Sonnet 4.6 — full toolset incl. verus
+│   ├── implementer.md     Opus 4.7 — full toolset incl. verus
 │   └── reviewer.md        Opus 4.7 — audit only, no Edit
 ├── ralph/
 │   ├── run-exercise.sh    main Ralph driver (bash state machine)
-│   ├── run-all.sh         sweep all three exercises
-│   └── test-state-machine.sh   10/10 unit tests on state classification
+│   ├── run-all.sh         sweep multiple exercises
+│   ├── check-spec.sh      pre-spec verification: verus the operator witness
+│   └── test-*.sh          unit tests on state classification + failure classification
 ├── scripts/
-│   ├── setup-check.sh     37-point pre-flight verification
-│   ├── install-hooks.sh   symlinks git hooks into .git/hooks/
-│   ├── git-hooks/pre-commit   path whitelist + cheat detection
-│   └── verify.sh          run `verus` on all exercises
-├── logs/<exercise>/       attempt logs, raw verifier output, reviews
+│   ├── setup-check.sh                pre-flight verification
+│   ├── install-hooks.sh              symlinks git hooks into .git/hooks/
+│   ├── git-hooks/pre-commit          path whitelist + cheat detection + spec preservation
+│   ├── test-witness-catches-bad-spec.sh   empirical proof the witness check catches Helly-1D drop
+│   ├── probe-witness-deny.sh         empirical proof the witness-deny ACL fires (six attack vectors)
+│   └── verify.sh                     run `verus` on all exercises
+├── logs/
+│   ├── <exercise>/        per-exercise attempt logs, raw verifier output, reviews
+│   └── _probe/            output of scripts/probe-witness-deny.sh
 └── writeup/
-    ├── blog-post.md      publication-ready post in the author's voice
-    ├── writeup.md        raw run record, full detail (5k+ words)
-    ├── outline.md        original two-post split plan
-    └── results_template.md   data table + failure taxonomy skeleton
+    ├── blog-post.md          publication-ready calibration-era post
+    ├── writeup.md            raw run record, full detail
+    ├── outline.md            original two-post split plan
+    ├── results_template.md   data table + failure taxonomy skeleton
+    ├── methodology-updates.md   revision input for the May 10 post
+    ├── composition-post.md      revision input for the May 17 post
+    ├── multi-module-post.md     source draft on the multi-module track
+    ├── sensor-fusion-post.md    source draft on the sensor-fusion primitives
+    └── quorum-cert-post.md      source draft on the BFT quorum certificate
 ```
 
 ## Architecture
@@ -129,7 +164,7 @@ START ──► THINK ──► WORK ──► (verus passes) ──► REVIEW
 | Implementer | claude-opus-4-7    | One verus attempt per call, scoped to the smallest unfinished sub-task: edit, run verus, log, commit. Stops at the iteration cap or on escalation. |
 | Reviewer    | claude-opus-4-7    | After verus passes, audits the diff against `spec-frozen-<ex>`. APPROVE or REJECT. Does not check correctness — verus already did. |
 
-The implementer was originally `claude-sonnet-4-6` and handled the three calibration exercises (binary_search, bounded_log, quorum_count) competently. Switched to `claude-opus-4-7` for quorum_cert and the BFT-path exercises because the proof obligations need deeper reasoning. The bash script in `ralph/run-exercise.sh` holds the source of truth for model choices.
+The implementer was originally `claude-sonnet-4-6` and handled the three calibration exercises (binary_search, bounded_log, quorum_count) competently. Switched to `claude-opus-4-7` for quorum_cert onward because the BFT-path proof obligations need deeper reasoning. The bash script in `ralph/run-exercise.sh` holds the source of truth for model choices.
 
 The state is **inferred from the filesystem each iteration**: presence of
 `exercises/<ex>.design.md`, contents of `logs/<ex>/attempts.md` and
@@ -137,10 +172,10 @@ The state is **inferred from the filesystem each iteration**: presence of
 in `logs/<ex>/review.md`. No state file, no orchestration daemon — the
 state machine is reconstructible by `ls`.
 
-## The two boundaries
+## The three boundaries
 
-The loop is autonomous (no human in the iteration). Two boundaries keep
-it honest:
+The loop is autonomous (no human in the iteration). Three boundaries
+keep it honest:
 
 **1. Content boundary — git pre-commit hook**
 
@@ -175,10 +210,41 @@ Every `claude -p` call in `ralph/run-exercise.sh` passes a strict
 Honest limitations: this is **not** process isolation. The `Write` tool
 isn't path-restricted the way `Bash` patterns are, so a file written
 outside the repo wouldn't be caught until commit. There's no filesystem
-namespace, no network namespace. A motivated adversarial agent could find
-paths around all of this. Real isolation would require Docker; for a
-weekend experiment with eyes on the first iterations, layer 1+2 is the
-deliberate trade-off. The writeup will say so plainly.
+namespace, no network namespace. A motivated adversarial agent could
+find paths around all of this. Real isolation would require Docker; for
+a weekend experiment with eyes on the first iterations, the three
+layers documented here are the deliberate trade-off. The writeup says
+so plainly.
+
+**3. Operator-territory boundary — witness-file deny patterns**
+
+`ralph/check-spec.sh` requires the operator to write a reference
+implementation in `exercises/<name>_witness.rs` (or
+`exercises/<name>_witness/`) that satisfies the same frozen spec as
+the exercise, so verus can confirm the spec admits a model before the
+loop ever runs. The witness contains a working proof; the agent must
+not see it, or discovery-test and invention-test results lose meaning.
+
+The `DISALLOWED_TOOLS` array in `ralph/run-exercise.sh` denies the
+agent reading these files via every common path:
+
+- `Read(**/*_witness*)`, `Read(**/*_witness/**)`
+- `Glob(**/*_witness*)`, `Grep(**/*_witness.rs)`
+- `Bash(cat|head|tail|ls|grep|rg *_witness*)`
+
+Empirically verified: `scripts/probe-witness-deny.sh` invokes
+`claude -p` with the production deny list and asks the agent to read
+a witness file via six different paths. Every one is blocked.
+
+Historical context: the first invention test (`vec_swap`) ran under
+a permissive whitelist that allowed witness reads. The agent's own
+attempt-1 commit message was "port witness proof"; its self-authored
+playbook entry read "the architect-owned witness file was visible to
+the implementer and gave the proof skeleton verbatim. For pure
+invention measurement, future exercises should hide the witness." The
+deny patterns landed in response; the clean re-test
+(`swap_multiset`) verified in one attempt with a proof structurally
+different from the witness.
 
 ## Setup from scratch
 
@@ -254,14 +320,16 @@ whether the first path can be ruled out by rules and tooling alone.
 
 ## Methodology refinements since the original blog post
 
-The original post (linked above) captured the methodology as it stood after the three calibration exercises. The harness has since been refined based on lessons learned during the calibration and the first BFT-path exercise:
+The original post (linked above) captured the methodology as it stood after the three calibration exercises. The harness has since been refined based on lessons from the BFT-path, multi-module, composition, and methodology-integrity work:
 
 - **Signal-aware orchestrator.** `fire_claude` now classifies non-zero claude exit codes by grepping the iteration log: rate-limit, budget cap, network blip, invocation error all surface as a distinct infrastructure-failure state. The orchestrator exits cleanly with an `infra_failure.md` marker rather than burning iterations against a transient problem. Tests in `ralph/test-classify-failure.sh`.
 - **Hook spec-preservation extended.** The pre-commit hook now extracts complete `requires` / `ensures` clause bodies via indentation tracking, not just the keyword lines. Closes the body-content blind spot the reviewer used to be the only layer catching. Tests in `scripts/test-hook-spec-preservation.sh`.
 - **Implementer scoped per iteration.** `prompt_work()` now directs the implementer to either pick the next unfinished sub-task from the design's order list, or to scope edits to the specific failing function from the latest verifier output. The orchestrator iterates; the implementer no longer tries to land everything in one attempt.
-- **Architect requires a Sub-tasks section.** Every design note ends with a numbered list of sub-tasks, ordered easiest to hardest, each small enough to land in one edit-verus-iterate cycle. The implementer reads this list and works through it in order. The existing "Suggested order of operations" header in older designs is accepted as equivalent.
-- **Architect playbook grew.** Six recurring proof patterns now live in `.claude/agents/architect.md`: `=~=` extensional equality, `choose` witnesses, `assert forall ... by` nudges, `decreases` clauses, frame-property defensive asserts, `final(self)` syntax, pigeonhole / cardinality bounds, pigeonhole-via-contradiction, `lemma_fundamental_div_mod` for threshold arithmetic.
-- **Pre-spec verification via witness files.** Two of the six exercises required operator intervention to re-freeze the spec (bounded_log: Verus syntax migration; marzullo: missing Helly-1D precondition). Both bugs surfaced *after* the agent had burned several attempts. The new tool — `ralph/check-spec.sh <name>` — verifies an operator-authored reference implementation in `exercises/<name>_witness.rs` against the same frozen spec. If the witness verifies, the spec admits a model. If verus rejects it, the spec is wrong and the operator fixes it before the agent ever sees it. The empirical negative test in `scripts/test-witness-catches-bad-spec.sh` confirms the tool would have caught the marzullo bug at operator time, before any agent cycles ran.
+- **Architect requires a Sub-tasks section.** Every design note ends with a numbered list of sub-tasks, ordered easiest to hardest, each small enough to land in one edit-verus-iterate cycle.
+- **Architect playbook grew.** Recurring proof patterns are accumulated in `AGENTS.md`'s "Discovered patterns" section, one entry per exercise. The agent reads these on every iteration; cross-exercise pattern transfer is what makes the methodology compound.
+- **Pre-spec verification via witness files.** Two early exercises required operator intervention to re-freeze the spec (bounded_log: Verus syntax migration; marzullo: missing Helly-1D precondition). Both bugs surfaced *after* the agent had burned several attempts. `ralph/check-spec.sh <name>` verifies an operator-authored reference implementation in `exercises/<name>_witness.rs` (or `exercises/<name>_witness/`) against the same frozen spec. If the witness verifies, the spec admits a model. If verus rejects it, the spec is wrong and the operator fixes it before the agent ever sees it. The empirical negative test in `scripts/test-witness-catches-bad-spec.sh` confirms the tool would have caught the marzullo bug at operator time.
+- **Witness-deny ACL + empirical probe.** The original implementer tool whitelist granted generic `Read` and `Glob` with no path qualifier, so the witness file was readable. A first invention test (`vec_swap`) made this concrete: the agent's iter-1 commit message read "port witness proof" and its own playbook entry flagged the leak. The `DISALLOWED_TOOLS` array in `ralph/run-exercise.sh` was extended with `Read(**/*_witness*)`, `Glob`/`Grep` equivalents, and `Bash(cat|grep|rg|head|tail|ls *_witness*)` patterns. `scripts/probe-witness-deny.sh` empirically demonstrates that all six common attack vectors get blocked. The clean re-test (`swap_multiset`) verified in one attempt with a proof structurally different from the witness.
+- **Deliberate discovery and invention tests.** Beyond standard exercises, the methodology track now includes exercises designed to test specific methodology claims: discovery tests (`sensor_poll_honest`, `counter_filler`) measure whether the agent can adapt a proof family the playbook names to a new obligation; the invention test (`swap_multiset`) measures whether the agent can assemble a proof in a family the playbook does *not* document. The discovery tests were re-audited on 2026-05-18 under the hardened whitelist with each exercise's own prior playbook summary stripped from AGENTS.md; both verified in one attempt again.
 
 ## Related work and next steps
 
