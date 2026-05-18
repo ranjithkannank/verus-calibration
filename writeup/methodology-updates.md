@@ -69,20 +69,29 @@ After the per-attempt-commits paragraph, add:
 
 ### What happened (section 4)
 
-The results-at-a-glance table needs a fourth row:
+The results-at-a-glance table needs further rows. Final shape:
 
-| Exercise         | Status | Attempts | Notable                                      |
-|------------------|--------|----------|----------------------------------------------|
-| binary_search    | DONE   | 1        | (unchanged)                                  |
-| bounded_log      | DONE   | 1 (post re-freeze) | (unchanged)                        |
-| quorum_count     | DONE   | 2        | (unchanged)                                  |
-| quorum_cert      | DONE   | 6        | First BFT-shaped exercise. Six narrow iterations through the architect's sub-task list. Pigeonhole-via-contradiction proof of a quorum certificate's honest-voter guarantee. |
+| Exercise              | Status | Attempts | Notable                                      |
+|-----------------------|--------|----------|----------------------------------------------|
+| binary_search         | DONE   | 1        | (unchanged)                                  |
+| bounded_log           | DONE   | 1 (post re-freeze) | (unchanged)                        |
+| quorum_count          | DONE   | 2        | (unchanged)                                  |
+| quorum_cert           | DONE   | 6        | First BFT-shaped exercise. Six narrow iterations through the architect's sub-task list. Pigeonhole-via-contradiction proof of a quorum certificate's honest-voter guarantee. |
+| ft_midpoint           | DONE   | 7        | First sensor-fusion exercise. Inclusion-exclusion + argmax-over-correct, both surfaced over multiple iterations. |
+| marzullo              | DONE   | 1 (post re-freeze) | Interval variant of ft_midpoint. Operator re-froze with Helly-1D precondition that the agent surfaced via constructive counterexample. |
+| cross_module_counter  | DONE   | 1        | First multi-module exercise. Nested `mod` blocks inside one `verus!{}`. |
+| counter_multifile     | DONE   | 1        | First multi-file exercise. Same algorithm, sibling-file layout. Tooling test. |
+| counter_producer      | DONE   | 1        | First cross-module composition. Producer's loop invariant carries facts the counter doesn't expose. |
+| sensor_poll           | DONE   | 1        | First composition-of-primitives exercise. Projection lemma bridges marzullo's frame to the caller's frame. |
+| sensor_poll_signed    | DONE   | 1        | Cryptographic trust boundary threaded purely at the spec layer. |
+| sensor_poll_honest    | DONE   | 1        | First deliberate discovery test (see methodology section). |
 
-A short narrative for quorum_cert (one to two paragraphs) is in the
-separate quorum-cert-post.md file. For this update, the existing
-post should either summarise it in two sentences and link to the
-follow-up post, or add a §4.4 mirroring the §4.1–§4.3 structure.
-Author's call.
+Per-exercise narratives for the post-calibration entries live in the
+separate writeup drafts: `quorum-cert-post.md`, `sensor-fusion-post.md`,
+`multi-module-post.md`, and `composition-post.md`. For this update,
+the existing post should either summarise each in two sentences and
+link to the follow-up post, or add a §4.N mirroring the §4.1–§4.3
+structure. Author's call.
 
 ### Methodology contributions (section 5)
 
@@ -132,6 +141,39 @@ shape as the existing three:
 > strips the Helly-1D precondition from a copy of the marzullo
 > witness and confirms verus rejects it. One operator-time Verus
 > run would have replaced those agent attempts.
+
+> **A deliberate discovery test on the architect-execution caveat.**
+> Every 1-attempt success since `marzullo` carried the same caveat:
+> the design note pre-named the load-bearing proof construct (the
+> loop invariant, the bridging lemma, the helper-set shape), so the
+> agent executed a designed proof rather than discovering one. The
+> caveat is worth taking seriously — methodology that only handles
+> executing pre-designed proofs is a much narrower claim than
+> methodology that supports discovery. `sensor_poll_honest` was set
+> up specifically to test the discovery half. Its design note
+> states the proof obligation (an honest-voter clause: there exists
+> a correct sensor whose interval contains the agreed point) and
+> the informal mathematical content (`n - f` supporters and
+> `n - f` correct sensors in a universe of `n` must overlap), but
+> deliberately does not name the supporting lemmas, the
+> helper-set constructions, the trigger annotations, or the
+> sub-proof structure. The agent verified in one attempt. Its
+> proof introduced a new helper lemma `lemma_honest_supporter_exists`
+> using inclusion-exclusion via `lemma_set_intersect_union_lens`
+> against a universe-finite bridge via `lemma_int_range` and
+> `lemma_len_subset`, then `axiom_is_empty_len0` / `axiom_is_empty`
+> to extract the witness. Those constructs are not in the design
+> note. They are in the playbook entry for `ft_midpoint` — a
+> different exercise with a different proof obligation but the
+> same proof family. The agent recognised the inclusion-exclusion
+> family applied to a new situation and reused the pattern. This
+> is one data point on one proof family. It moves the
+> "designed vs discovered" axis from "untested, plausible caveat"
+> to "tested once, supports discovery within an established
+> family." It does not yet tell us whether the methodology
+> supports discovery on a proof family the playbook does not
+> already document; that is a separate test on a different
+> exercise.
 
 ### What the loop got wrong (section 6 / limitations)
 
@@ -243,5 +285,15 @@ public commit:
 - `quorum_cert` DONE: `5a2a87d`
 - Pre-spec verification tooling (`ralph/check-spec.sh`, marzullo
   witness, empirical negative test): `17a4fdd`
+- `sensor_poll` DONE (composition demonstration): `2a2036b`
+- `sensor_poll_signed` scaffold + witness (signature trust
+  boundary at the spec layer): `dacd129`
+- `sensor_poll_signed` DONE: `75e54f0`
+- `sensor_poll_honest` scaffold + witness (deliberate discovery
+  test, design note omits lemma names): `f85bca5`
+- `sensor_poll_honest` agent attempt-1 (introduces
+  `lemma_honest_supporter_exists` via inclusion-exclusion
+  recognised from the ft_midpoint playbook entry): `bbb8e69`
+- `sensor_poll_honest` DONE: `ad91c63`
 
 All on `main` at <https://github.com/ranjithkannank/verus-calibration>.
