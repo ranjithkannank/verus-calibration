@@ -27,3 +27,6 @@
       The diff against `spec-frozen-counter_filler` consists entirely of exec-body fills:
       - `counter.rs`: three `unimplemented!()` markers replaced with real implementations of `new`, `incr`, `get`
       - `filler.rs`: `fill_to`'s body replaced with a 4-conjunct invariant + decreases while loop
+  > committed: ef986a3 review: counter_filler iter-2
+
+--- iteration 3  |  state=APPROVED  |  attempts=1/15
