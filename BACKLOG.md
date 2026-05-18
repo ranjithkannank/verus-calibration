@@ -57,19 +57,48 @@ their own undertaking on top.
 ## "What's next" options as of 2026-05-17
 
 Set of five directions the methodology could go from here, captured
-during a check-in after the multi-module work landed. Currently
-pursuing option 1; others kept here for later.
+during a check-in after the multi-module work landed. Option 1
+*partially* done in this session — see `sensor_poll` exercise on
+`main`; honest scope below. Options 2-5 still open.
 
-1. **Compose the existing BFT primitives into a small system.**
-   `quorum_cert`, `ft_midpoint`, and `marzullo` are verified but
-   uncomposed. A verified Byzantine-tolerant sensor poll that uses
-   the quorum-style structural check to authenticate signed sensor
-   reports and then runs `ft_midpoint` or `marzullo` on the
-   authenticated values would be the first end-to-end *system* on
-   the path. Multi-module by necessity, with a composition theorem
-   that spans the seam between two primitives. Bounded scope, novel
-   regime (system-level integration), directly advances the original
-   goal.
+1. **Compose the existing BFT primitives into a small system.** —
+   *partially done 2026-05-17.* The `sensor_poll` exercise has a
+   verified end-to-end function (`poll`) whose correctness theorem
+   spans the seam between two BFT-shaped primitives, via a
+   projection lemma. The composition regime is demonstrated.
+
+   What this *did not* do:
+   - Did not import `quorum_cert` or `marzullo` as crate dependencies.
+     Each existing exercise compiles as its own Verus crate; there
+     is no way (in the current repo layout) to depend on one from
+     another. `sensor_poll` *ports* the primitives — re-implements
+     them as siblings inside its own crate.
+   - Did not use the full `quorum_cert`. The `auth` module is a
+     simplified variant — distinct-sensor structural check only. The
+     signature-verification half (the `signature_valid` uninterp
+     predicate, the `lemma_qc_has_honest_voter` honest-voter
+     guarantee) was dropped.
+   - Did not use `ft_midpoint`. `sensor_poll` composes `auth` +
+     `marzullo`; `ft_midpoint` is unused.
+   - Not really "a small system" — it's a verified end-to-end
+     *function*, not a system. No multiple flows, no configuration
+     surface, no integration points beyond one composition call.
+
+   The bigger version of option 1, still open:
+   a. Restructure existing exercises as importable Verus crates,
+      so a downstream exercise can `use quorum_cert::*;` rather
+      than re-implement. Possibly large repo refactor.
+   b. Add the signature-verification half — bring `quorum_cert`'s
+      `verify_qc_structure` properly into the composition so the
+      trust boundary covers signed reports, not just distinct
+      sensor IDs.
+   c. Use both `ft_midpoint` and `marzullo`, or build a poll that
+      selects between them.
+
+   Each piece is its own work. Reasonable next exercise on this
+   axis: "sensor_poll_signed" that does (b) — adds the
+   signature-verification trust boundary — without yet attempting
+   (a).
 2. **Verified Byzantine agreement.** See the entry above. Multi-round
    messaging, larger scope, comparable to `quorum_cert` or
    `ft_midpoint` in complexity, distinct verification regime.
