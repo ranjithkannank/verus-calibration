@@ -238,6 +238,74 @@ shape as the existing three:
 > attempt, with solutions structurally identical to the originals.
 > The discovery and invention claims hold under audit.
 
+> **An external-validity probe: the harness travels on a
+> third-party benchmark; the methodology claim does not yet.**
+> *Honest scope, leading:* this section reports n=2, and both tasks
+> shipped with operator-authored design notes that named the
+> relevant Verus tooling family before the implementer ran. The
+> result therefore says the **harness** accepts externally-supplied
+> specs cleanly; it does not yet say the **methodology** travels
+> without operator hand-holding. That is a separate claim and is
+> the next deliberate experiment, not a settled finding.
+>
+> Two tasks were drawn from Microsoft's
+> [VeruSAGE-Bench](https://github.com/microsoft/verus-proof-synthesis)
+> (849-task benchmark across distributed systems, OS kernels,
+> storage, and verified utility libraries). Selected from the
+> smallest end of the size distribution to test that the harness
+> accepts the upstream task shape at all before investing in
+> larger runs. `MA__bin_sizes__mul_assoc` is a pure `proof fn`
+> arithmetic identity over `nat`: `(x * y) * z == y * (x * z)`.
+> `VE__utils__init_vec_u8` is an exec function from the vest
+> verified-serializer's utilities — a counted `while` loop that
+> fills a `Vec<u8>` with zeros, shipped without the loop invariant
+> or `decreases` clause Verus needs to accept it. Both verified in
+> one implementer attempt and the reviewer APPROVED on first read.
+> The first closed with a single
+> `assert((x * y) * z == y * (x * z)) by (nonlinear_arith);`. The
+> second added a two-conjunct invariant (`i <= n`, `ret@.len() == i`)
+> and `decreases n - i`; the implementer's solution is strictly
+> smaller than the upstream ground-truth witness, which carries an
+> additional `assert(ret@[i as int] == 0);` that turns out to be
+> unnecessary when the postcondition only constrains length.
+>
+> The harness adaptation surface was almost nothing. Two iteration-cap
+> entries in `ralph/run-exercise.sh`'s per-exercise `case` block and
+> a new section in AGENTS.md naming the external-validity track as
+> separate from the numbered internal-exercise sequence. The
+> pre-commit hook's path whitelist, spec-line preservation, and
+> cheat-token detection all worked unmodified on the upstream task
+> shape (which carries `fn main() {}` and one `verus!{}` wrapper,
+> different from our internal exercises). The witness-deny ACL
+> matches `*_witness*` regardless of name shape, so
+> `exercises/MA__bin_sizes__mul_assoc_witness.rs` was denied by the
+> same patterns that protect `marzullo_witness.rs`. The upstream
+> `microsoft/verus-proof-synthesis` repository is cloned outside
+> the verus-calibration working tree, so the agent cannot reach the
+> ground-truth solutions that ship alongside the unverified task
+> files; the path scoping is structural rather than ACL-based.
+>
+> Direct comparison to AutoVerus and VeruSAGE on these specific
+> tasks is not yet possible: the upstream README states the
+> per-task leaderboard is "TO COME". The AutoVerus and VeruSAGE
+> papers report aggregate pass rates across the full benchmarks
+> (Verus-Bench: 150 algorithmic tasks; VeruSAGE-Bench: 849
+> repository-level tasks); n=2 is too small to set against either
+> aggregate. The honest aggregate-vs-aggregate sentence is "this
+> harness verified the first two tasks it was given from
+> VeruSAGE-Bench; both single-attempt; more tasks are needed before
+> 'comparable to AutoVerus / VeruSAGE' is a defensible phrasing."
+>
+> Implication for the methodology claim. The "the methodology
+> works on tasks we did not design" framing remains a deliberate
+> next experiment. The way to earn it is a run of five to ten more
+> tasks with deliberately neutral design notes — no tooling-family
+> hints, no proof-structure suggestions, just the obligation and
+> the upstream context — and report whatever happens. Negative
+> results from that run are more informative than positive ones,
+> because they tell us where the methodology actually stops
+> traveling.
+
 ### What the loop got wrong (section 6 / limitations)
 
 Two items in the existing post should be marked as fixed:
@@ -313,6 +381,21 @@ Add a new closing item about the BFT direction:
 > sensor fusion for safety-critical use, then a hardware-deployed
 > demonstration.
 
+And a second new closing item about external validity:
+
+> The methodology was probed against tasks we did not design. The
+> harness travelled — two small VeruSAGE-Bench tasks verified in
+> one attempt each through the same loop, with two iteration-cap
+> entries the only adaptation needed. The methodology did not
+> travel cleanly, because both runs used operator-authored design
+> notes that named the relevant Verus tooling family before the
+> implementer ran. The next experiment is a five-to-ten task run
+> with deliberately neutral design notes — no tooling hints, no
+> proof-structure suggestions, just the obligation and the upstream
+> context. Negative results from that run are more informative than
+> positive ones, because they tell us where the methodology
+> actually stops travelling.
+
 ### Where this fits (section 8)
 
 No structural changes. The Schubert / Huntley / Karpathy / Microsoft
@@ -367,5 +450,8 @@ public commit:
 - `sensor_poll_honest` audit reset: `bc3054e`; audit DONE: `0371dca`
 - `counter_filler` audit reset: `4d35f5a`; audit DONE: `7447760`
 - Audit results commit (AGENTS.md playbook entries restored with `audit-confirmed 2026-05-18` tag): `cf31fe7`
+- VeruSAGE-Bench section added to BACKLOG.md (with the "what would need to be true to take it on" criteria): `ec241e0`
+- `MA__bin_sizes__mul_assoc` (first external-validity task, pure proof fn): scaffold `afc44ff`, agent's iter-1 `dcb66b5`, reviewer APPROVE `6b5e5f5`, DONE `2031559`
+- `VE__utils__init_vec_u8` (second external-validity task, exec + loop invariant): scaffold `70dd66c`, agent's iter-1 `adab22c`, reviewer APPROVE `8f6f3fa`, DONE `bfe19a6`
 
 All on `main` at <https://github.com/ranjithkannank/verus-calibration>.
