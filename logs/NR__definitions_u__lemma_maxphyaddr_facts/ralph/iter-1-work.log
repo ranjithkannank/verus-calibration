@@ -1,0 +1,9 @@
+Done. Working tree is clean for this exercise's files; the remaining untracked items belong to other exercises and the orchestrator's harness.
+
+**Summary**
+
+- Status: `verus_passed`
+- Attempt: 1
+- Proof body (4 lines): axiom call to pull `32 <= MAX_PHYADDR_WIDTH <= 52` into scope, two `by (compute)` asserts pinning `1usize << 32 == 0x100000000` and `1usize << 52 == 0x10000000000000`, one `by (bit_vector)` forall giving monotonicity of left-shift on `usize` under `n <= m < 64`. SMT chains the rest.
+- Verifier output: `5 verified, 0 errors`.
+- Logged, committed, AGENTS.md `Discovered patterns` extended.
