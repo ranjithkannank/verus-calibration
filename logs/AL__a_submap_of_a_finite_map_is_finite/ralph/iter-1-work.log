@@ -1,0 +1,12 @@
+Done. Attempt 1 succeeded.
+
+**Summary:**
+- Sub-task: ran baseline (which produced the expected `postcondition not satisfied` on `m1.dom().finite()`), then implemented the smallest body.
+- Proof: two lines —
+  1. `assert(m1.dom().subset_of(m2.dom()));` — derives subset from `submap_of`'s key-inclusion conjunct.
+  2. `vstd::set_lib::lemma_len_subset(m1.dom(), m2.dom());` — given subset + superset finite, ensures `m1.dom().finite()`.
+- Verus exit code: 0 (`1 verified, 0 errors`).
+- Status: `verus_passed`.
+- Logged attempt, appended a Discovered patterns entry, committed (`905c2eb`), working tree clean.
+
+Handing back to orchestrator for reviewer.
