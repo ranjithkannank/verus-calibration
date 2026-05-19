@@ -1,0 +1,12 @@
+Review complete. Conclusion: **APPROVE**.
+
+Summary of the audit:
+- The diff against `spec-frozen-MA__bin_sizes__shift_is_div` is purely additive: a new `proof fn lemma_pow2_eq_vstd` bridge helper and three lines inside the previously empty body of `shift_is_div`.
+- All five checklist items pass:
+  1. `requires`/`ensures` on `shift_is_div` are byte-identical.
+  2. The pre-existing `pub open spec fn pow2` body is unchanged.
+  3. No `assume(`, `external_body`, `unimplemented!()`, `unreachable!()`, or `panic!(` introduced.
+  4. The new helper is a `proof fn` with no `requires` clause; no trivializing contracts.
+  5. No `closed`/`open` toggles.
+
+`logs/MA__bin_sizes__shift_is_div/review.md` written and committed as `0ca0e8d`.
