@@ -306,6 +306,139 @@ shape as the existing three:
 > because they tell us where the methodology actually stops
 > traveling.
 
+> **External-validity probe, batch 2: methodology probe with
+> neutral design notes (n=8, 6 verified, 2 distinct blocking
+> findings).** *Honest scope, leading:* this batch tested the
+> methodology claim that the prior n=2 batch could not, because
+> the prior design notes named the Verus tooling family before
+> the implementer ran. Batch 2's design notes state the obligation
+> and a standard sub-task ordering only — no tooling-family names,
+> no lemma names, no proof-structure suggestions, no
+> cross-references to internal exercises by name. Of the eight
+> tasks attempted, six verified, one was blocked by a harness gap
+> that we then fixed, and one was blocked by an upstream Verus
+> version mismatch that is out of scope to fix tonight. The
+> methodology did travel on the six that ran.
+>
+> Tasks were drawn from `tasks-sampled-100/` across six different
+> source projects: `AL` (anvil-library), `IR` (ironkv), `MA`
+> (memory-allocator, a second task in a different proof family
+> from batch 1's `mul_assoc`), `NR` (nrkernel, two tasks), `OS`
+> (atmosphere, an OS kernel), and `NO` (node-replication). Sizes
+> ranged from 171 B to 3768 B. The mix is intentional — covers
+> pure ghost proof fns over data structures, arithmetic chains,
+> exec functions with loops, and one stress test on size.
+>
+> Attempts-to-verify across the six that completed: five
+> single-attempt successes (NR `set_of_first_n_nat_is_finite`,
+> AL `submap_of_a_finite_map_is_finite`, MA `shift_is_div`, IR
+> `lemma_if_everything_in_seq_satisfies_filter_then_filter_is_identity`,
+> NR `lemma_maxphyaddr_facts`, NO `get_fresh_nat_not_in`) and one
+> two-attempt success on IR `singleton_seq_to_set_is_singleton_set`.
+> The IR singleton's attempt 1 tried the obvious `=~=` extensional
+> equality, watched verus reject it ("`=~=` alone doesn't trigger
+> the `to_set` axiom needed to expand `seq![x].to_set().contains(y)`"
+> — agent's own notes), then attempt 2 closed via vstd's
+> `lemma_push_to_set_commute` plus two extensional-equality
+> bridges. That two-attempt arc — agent reads its failure, names
+> the missing axiom, finds the vstd lemma family that supplies it,
+> applies it — is the load-bearing data point on the methodology
+> travelling without operator hand-holding.
+>
+> Two tasks were blocked, with distinct findings.
+>
+> The first, `NR__definitions_u__lemma_maxphyaddr_facts`, was
+> initially blocked by a gap in our own pre-commit hook. The
+> upstream task ships with `#[verifier(external_body)]` on an
+> opaque-constant declaration, which is the standard Verus pattern
+> for declaring a trust-boundary value constrained by a separate
+> `pub axiom fn`. Our hook's cheat-token detector treated every
+> line of the brand-new scaffold file as "added" (because there
+> was no prior baseline to diff against) and rejected the
+> `external_body` marker as agent-introduced cheating. The
+> `check-spec.sh` witness check had the symmetric gap, refusing
+> witnesses that mirrored the exercise file's baseline
+> `external_body`. Both layers were fixed in a single commit: the
+> pre-commit hook now diffs against the spec-frozen tag when it
+> exists and treats the scaffold commit as a baseline event; the
+> witness check now counts cheat-token occurrences in the witness
+> minus the count in the paired exercise file, flagging only
+> excess. Both fixes preserve the original boundary intent —
+> agents still cannot introduce new cheat tokens — and add a
+> capability the harness needed to accept external tasks that
+> legitimately carry baseline `external_body` in their scaffold.
+> The task ran cleanly under the fix and verified in one attempt.
+>
+> The second, `OS__array__impl4__init2none`, was blocked by an
+> upstream/downstream Verus version mismatch and stays blocked.
+> The task's `ensures` clauses use the pre-`final(self)` syntax
+> for `&mut self` postconditions (`self.seq@ ...`,
+> `self@[index].is_None()`), which the current Verus build in
+> this repo rejects. This is the same class of finding the
+> witness mechanism is designed to catch (AGENTS.md, "Pre-spec
+> verification (operator)", bug class 2: spec syntax that no
+> longer compiles); the witness for this task fails to verify
+> under our Verus, and our pinned Verus is newer than the one
+> VeruSAGE-Bench was authored against. Two ways forward (both out
+> of scope tonight): pin Verus to VeruSAGE-Bench's authored
+> version, or port the spec to current Verus and lose direct
+> upstream byte-equivalence. The pinned-Verus path is the right
+> scientific move and is queued for the next iteration.
+>
+> Two findings of qualitatively different shape from one batch
+> are useful — the first surfaced a real harness adaptation need
+> that the prior batch did not stress; the second confirms that
+> the witness-based pre-spec check generalises to externally
+> authored specs as well as our own. Both are recorded as
+> `logs/<task>/blocked.md` (with the first task's original
+> blocked marker retained as `blocked.first-attempt.md` after the
+> harness fix unblocked it).
+>
+> Aggregate-level honesty. Batch 2 raises the external-validity
+> data point from "first probe with operator hints" (batch 1) to
+> "n=6 verified on tasks we did not design, with neutral design
+> notes that did not name the Verus tooling family before the
+> implementer ran". That is meaningfully stronger evidence that
+> the methodology travels on small-to-medium-sized proof-fn and
+> exec tasks. It is not yet evidence that the methodology
+> travels at the scale VeruSAGE-Bench measures (849 tasks
+> including 7k+ B and 24k+ B examples that we deliberately
+> deferred). The natural next batch is a larger size tier: pick
+> 5–10 tasks in the 2–10 KB range, mostly from `AC` (anvil
+> controller, temporal logic) and the larger `ST` (storage) /
+> `OS` files, and report whatever happens.
+
+> **Harness boundary refinement: cheat-token policy now
+> distinguishes baseline scaffold from agent edits.** The
+> external-validity probe surfaced a real gap in the original
+> hook design: it treated every line of a brand-new exercise file
+> as "added", which silently equated baseline scaffold content
+> with agent introduction. For internally-authored exercises this
+> was harmless — none of our scaffolds carried cheat tokens to
+> begin with — but for VeruSAGE-Bench tasks that legitimately
+> declare opaque constants via `#[verifier(external_body)]`, the
+> hook rejected the scaffold commit and made the task
+> unrun-able. Two surgical fixes:
+>
+> 1. `scripts/git-hooks/pre-commit` now diffs against
+>    `spec-frozen-<exercise>` when the tag exists, and skips the
+>    cheat-token detection entirely on the scaffold commit (no
+>    prior baseline to compare against). The next commit and all
+>    subsequent ones diff against the tag, so any genuinely new
+>    cheat token an agent introduces is still caught.
+> 2. `ralph/check-spec.sh` now counts cheat-token occurrences in
+>    the witness file and subtracts the count in the paired
+>    exercise file. A witness may carry the same baseline tokens
+>    as the exercise; only excess occurrences flag as
+>    operator-introduced bypass.
+>
+> Tests for the pair-aware behaviour: the
+> `NR__definitions_u__lemma_maxphyaddr_facts` scaffold (which
+> failed under the old policy, then ran cleanly under the new
+> one) is itself the empirical demonstration; both commits are
+> in the public history. The original boundary intent — agents
+> cannot introduce cheat tokens — is preserved exactly.
+
 ### What the loop got wrong (section 6 / limitations)
 
 Two items in the existing post should be marked as fixed:
@@ -384,17 +517,19 @@ Add a new closing item about the BFT direction:
 And a second new closing item about external validity:
 
 > The methodology was probed against tasks we did not design. The
-> harness travelled — two small VeruSAGE-Bench tasks verified in
-> one attempt each through the same loop, with two iteration-cap
-> entries the only adaptation needed. The methodology did not
-> travel cleanly, because both runs used operator-authored design
-> notes that named the relevant Verus tooling family before the
-> implementer ran. The next experiment is a five-to-ten task run
-> with deliberately neutral design notes — no tooling hints, no
-> proof-structure suggestions, just the obligation and the upstream
-> context. Negative results from that run are more informative than
-> positive ones, because they tell us where the methodology
-> actually stops travelling.
+> first batch (n=2) showed the harness accepts external tasks
+> cleanly. The second batch (n=8 attempted, 6 verified with
+> deliberately neutral design notes, 1 unblocked by a hook fix, 1
+> blocked by upstream Verus version mismatch) shows the methodology
+> travels at small-to-medium proof-fn and exec sizes when the
+> design note does not name the tooling family. The next batch is
+> the size tier above this one: 5–10 tasks in the 2–10 KB range,
+> mostly AC (anvil controller, temporal logic) and the larger ST /
+> OS files. Run on a pinned Verus matching VeruSAGE-Bench's
+> authored version so the `final(self)` migration that blocked OS
+> init2none does not block the next pick. The right question is
+> "where does the methodology stop travelling at scale", which the
+> size tier above this one is the cheapest way to probe.
 
 ### Where this fits (section 8)
 
@@ -453,5 +588,14 @@ public commit:
 - VeruSAGE-Bench section added to BACKLOG.md (with the "what would need to be true to take it on" criteria): `ec241e0`
 - `MA__bin_sizes__mul_assoc` (first external-validity task, pure proof fn): scaffold `afc44ff`, agent's iter-1 `dcb66b5`, reviewer APPROVE `6b5e5f5`, DONE `2031559`
 - `VE__utils__init_vec_u8` (second external-validity task, exec + loop invariant): scaffold `70dd66c`, agent's iter-1 `adab22c`, reviewer APPROVE `8f6f3fa`, DONE `bfe19a6`
+- Batch 2 harness setup (8 iteration caps + AGENTS.md neutral-design-notes section): `ded995a`
+- `IR__seq_is_unique__singleton_seq_to_set_is_singleton_set` (batch 2, two-attempt success — agent failed shortcut then bridged via vstd's `lemma_push_to_set_commute`): scaffold `e66ebd7`, witness fix `ec6e7e5`, iter-1 attempt `4aef0f0`, iter-2 attempt `5ed2c61`, DONE `e7b8801`
+- `NR__extra__lemma_set_of_first_n_nat_is_finite` (batch 2, structural induction): scaffold `67cd690`, iter-1 attempt `73cd4ea`, DONE `0c865d8`
+- `AL__a_submap_of_a_finite_map_is_finite` (batch 2, `subset_of` + `lemma_len_subset`; structurally different from upstream ground truth): iter-1 attempt `905c2eb`, DONE `6160a66`
+- `MA__bin_sizes__shift_is_div` (batch 2, recursion + bit_vector + pow2 helpers): scaffold `acab088`, iter-1 attempt `5f0f2a8`, DONE `b6f2974`
+- `IR__verus_extra__lemma_if_everything_in_seq_satisfies_filter_then_filter_is_identity` (batch 2, induction with `reveal(Seq::filter)`): scaffold `2f3ad26`, iter-1 attempt `da2362f`, DONE `f787d5c`
+- `NR__definitions_u__lemma_maxphyaddr_facts` — original blocked-by-hook commit `e2a2cb6`, harness fix `041df77`, re-scaffold `b3b6014`, rename of blocked.md to `blocked.first-attempt.md` `5a972ce`, iter-1 attempt `1b21cfc`, DONE `248a6cc`. The blocked-then-fixed-then-verified arc is itself the empirical demonstration of the harness boundary refinement.
+- `OS__array__impl4__init2none` (batch 2 task 7, BLOCKED by Verus version mismatch — upstream task uses pre-`final(self)` postcondition syntax): scaffold + blocked.md committed in `602e6ae`. No agent attempts; the witness mechanism caught the spec-syntax issue before the loop ran, exactly as designed.
+- `NO__spec__unbounded_log__get_fresh_nat_not_in` (batch 2 task 8, largest in batch at 3.7 KB, multiple operator-axiom helpers): iter-1 attempt `4cb3405`, DONE `0633908`
 
 All on `main` at <https://github.com/ranjithkannank/verus-calibration>.

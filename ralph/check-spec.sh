@@ -127,9 +127,13 @@ check_cheat_pair() {
   local pair
   pair=$(pair_for_witness "$file")
   local wt_count ex_count
-  wt_count=$(grep -cE "$pattern" "$file" 2>/dev/null || echo 0)
+  # grep -c always prints a count to stdout but exits non-zero when count is 0;
+  # capture-then-default avoids the "0\n0" artefact from `|| echo 0`.
+  wt_count=$(grep -cE "$pattern" "$file" 2>/dev/null || true)
+  wt_count=${wt_count:-0}
   if [ -f "$pair" ]; then
-    ex_count=$(grep -cE "$pattern" "$pair" 2>/dev/null || echo 0)
+    ex_count=$(grep -cE "$pattern" "$pair" 2>/dev/null || true)
+    ex_count=${ex_count:-0}
   else
     ex_count=0
   fi
