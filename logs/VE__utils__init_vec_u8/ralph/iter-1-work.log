@@ -1,0 +1,9 @@
+Done. Attempt 1 succeeded.
+
+**Summary:**
+- Sub-task addressed: all four sub-tasks in the design note in a single pass (the design predicted 1–2 attempts).
+- Edit: added a two-conjunct `invariant` block (`i <= n`, `ret@.len() == i`) and a `decreases n - i` clause to the `while` loop in `exercises/VE__utils__init_vec_u8.rs`.
+- Result: `verus exercises/VE__utils__init_vec_u8.rs --crate-type=lib` → `2 verified, 0 errors`, exit 0.
+- Logged at `logs/VE__utils__init_vec_u8/attempts.md`, raw output at `logs/VE__utils__init_vec_u8/raw/attempt-1.txt`, status `verus_passed`.
+- Appended a Discovered-patterns entry to `AGENTS.md` (the `Vec::push`-spec-auto-discharges nuance).
+- Committed as `adab22c`. Working tree clean. Ready for reviewer.
