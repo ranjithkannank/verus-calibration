@@ -94,6 +94,24 @@ Work in this order. Do not start the next exercise until the previous one is eit
 15. `exercises/vec_swap_v2.rs` — second attempted invention test. ALSO INVALIDATED on 2026-05-18: the operator created the v2 scaffold by `cp exercises/vec_swap.rs exercises/vec_swap_v2.rs` *after* the agent had filled in vec_swap.rs's body in the first run, so the v2 "scaffold" already contained the full proof. The agent's iter-1 log flagged this honestly ("I made no edits to exercises/vec_swap_v2.rs"). Kept on disk as evidence.
 16. `exercises/swap_multiset.rs` — third attempt at the invention test. Spec identical to `vec_swap`; scaffold typed by hand (no copy from the modified vec_swap.rs); witness denied to the agent under the hardened whitelist. Iteration cap 25.
 
+## External-validity tests (VeruSAGE-Bench)
+
+Separate track from the numbered internal-exercise sequence above. Tasks here are drawn from Microsoft's [VeruSAGE-Bench](https://github.com/microsoft/verus-proof-synthesis) (849-task benchmark, sampled-100 subset). The point is *external validity* of the methodology: do tasks we did not design behave the same way through this harness? The result that matters is attempts-to-verify on each task, set alongside whatever published AutoVerus / VeruSAGE numbers exist (per upstream README, per-task leaderboard is "TO COME"; aggregate numbers are in the papers).
+
+Scaffold rules for any external task:
+
+- `exercises/<TASK_NAME>.rs` — upstream task file byte-for-byte. Becomes the frozen spec on `git tag spec-frozen-<TASK_NAME>`.
+- `exercises/<TASK_NAME>_witness.rs` — operator-authored minimal verified version (task file + smallest body fix). Subject to the same witness-deny ACL and pre-commit cheat-token check as every other witness.
+- `exercises/<TASK_NAME>.design.md` — operator-authored short note: signature, what the body needs to do, suggested order-of-operations. Same shape as internal exercises.
+- Iteration cap chosen per task; set in `ralph/run-exercise.sh`'s `case` block.
+
+Upstream tasks contain `fn main() {}` (binary form) and run under `verus <task>.rs` per upstream docs. Our harness keeps invoking `verus <file> --crate-type=lib` — confirmed locally that both flag forms verify upstream ground-truth witnesses, so the harness is unchanged.
+
+Honest scope: AGENTS.md's "Discovered patterns" section accumulates per-exercise findings; the same applies here. External-task entries should be tagged with `[VeruSAGE-Bench]` so they stay distinct from the internal track when reading the playbook.
+
+17. `exercises/MA__bin_sizes__mul_assoc.rs` — first external-validity task. Pure `proof fn` synthesis: `(x*y)*z == y*(x*z)` over `nat`. Upstream prefix `MA` = memory-allocator (Verus-verified mimalloc port). Smallest task in the benchmark by byte count (136 B). Iteration cap 15. Ground-truth witness closes via `by (nonlinear_arith)`.
+18. `exercises/VE__utils__init_vec_u8.rs` — second external-validity task. Exec function with a `while` loop that needs an `invariant` + `decreases` clause to verify. Upstream prefix `VE` = vest (verified serializer). Closest match to our existing methodology shape (exec + loop invariant, same family as `binary_search`). Iteration cap 15.
+
 ## Multi-agent workflow (brief)
 
 The full state machine and how the human operator drives it is in `ORCHESTRATION.md`. In short:
