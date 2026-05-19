@@ -1,0 +1,8 @@
+Attempt 1 complete. Summary:
+
+- **Sub-task addressed:** Sub-task 2 of the design — smallest possible body.
+- **Edit:** Added `assert(seq![x].to_set() =~= set![x]);` to the proof body.
+- **Result:** Verus exited 1. The `=~=` extensional-equality assertion failed on its own; the SMT solver does not unfold `seq![x].to_set().contains(y)` for free.
+- **Status:** `verus_failed` written, log entry appended, commit `4aef0f0` created, tree clean.
+
+The orchestrator can now drive attempt 2, which should bridge the gap with explicit element-membership asserts or a vstd `to_set` lemma.
