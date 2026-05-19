@@ -1,0 +1,3 @@
+Review complete. **Conclusion: APPROVE.**
+
+The diff against `spec-frozen-VE__utils__init_vec_u8` adds only loop annotations (`invariant i <= n, ret@.len() == i,` and `decreases n - i,`) inside the `while` loop body. The `ensures res@.len() == n` clause, the function signature, and all exec code are byte-identical to the frozen baseline. No `assume(`, `external_body`, `unimplemented!()`, `unreachable!()`, `panic!`, new `requires`, or `closed`↔`open` toggles. Review committed as `8f6f3fa`.
