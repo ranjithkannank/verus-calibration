@@ -1,0 +1,12 @@
+Done. Attempt 1 verified on the first try.
+
+**Summary:**
+- Status: `verus_passed` (exit code 0, "2 verified, 0 errors")
+- Approach: Used the three operator-axiomatized helpers in a five-line composition:
+  1. `combiner_request_ids_finite(combiner)` → right-hand finiteness
+  2. `bad = reqs + combiner_request_ids(combiner)` → finite union
+  3. `element_outside_set(bad)` → get a fresh `r`
+  4. `combiner_request_ids_not_contains(combiner, r)` → bridge `!contains` ↔ `combiner_request_id_fresh`
+  5. `assert exists ... by { ... }` block exhibiting `r` as the witness so the `choose` in `get_fresh_nat` resolves
+- Logged the discovered pattern in AGENTS.md under a new `NO__spec__unbounded_log__get_fresh_nat_not_in [VeruSAGE-Bench]` section.
+- Working tree clean.
