@@ -1,0 +1,14 @@
+Review complete and committed. **Conclusion: APPROVE.**
+
+The diff against `spec-frozen-MA__bin_sizes__mul_assoc` is a single added line inside the body of `proof fn mul_assoc`:
+
+```
++    assert((x * y) * z == y * (x * z)) by (nonlinear_arith);
+```
+
+All five checklist items pass:
+1. The `ensures` clause is byte-identical.
+2. No pre-existing `spec fn` declarations exist in this file (only `proof fn`).
+3. No bypass tokens (`assume`, `external_body`, `unimplemented!()`, `unreachable!()`, `panic!`) were introduced — only an `assert ... by (nonlinear_arith)`, which is explicitly allowed.
+4. No new `requires` clauses.
+5. No `closed`/`open` spec toggles.
