@@ -1,0 +1,10 @@
+Review complete and committed.
+
+**Conclusion: APPROVE**
+
+The diff against `spec-frozen-NR__definitions_u__lemma_maxphyaddr_facts` consists solely of four lines inserted inside the body of `lemma_maxphyaddr_facts`:
+- One call to the pre-existing frozen axiom `axiom_max_phyaddr_width_facts()`
+- Two `assert(...) by (compute)` lines pinning `1usize << 32` and `1usize << 52`
+- One `assert(forall ...) by (bit_vector)` monotonicity forall
+
+All five checklist items pass: no `requires`/`ensures` changes, no pre-existing `spec fn`/`spec const` body changes, no bypass tokens (`assume`, `external_body`, `unimplemented`, `unreachable`, `panic`), no new `requires` clauses, and no `closed`/`open` toggles.
