@@ -1,0 +1,9 @@
+error: assertion failed
+ --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/IR__seq_is_unique__singleton_seq_to_set_is_singleton_set.rs:9:12
+  |
+9 |     assert(seq![x].to_set() =~= set![x]);
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+verification results:: 0 verified, 1 errors
+error: aborting due to 1 previous error
+
