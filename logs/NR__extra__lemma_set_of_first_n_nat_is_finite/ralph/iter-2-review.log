@@ -1,0 +1,8 @@
+Review committed: **APPROVE**.
+
+Summary of audit:
+- Diff is a single hunk adding `decreases n` plus a base/step induction body to the previously-empty proof.
+- `ensures Set::new(|i: nat| i < n).finite()` is byte-identical to the frozen baseline.
+- No `spec fn` declarations exist in this file, so no body/visibility concerns.
+- No `assume(`, `external_body`, `unimplemented!()`, `unreachable!()`, `panic!(`, or new `requires` introduced.
+- `decreases` is a termination measure, not a spec clause — addition is routine for recursive proof fns.
