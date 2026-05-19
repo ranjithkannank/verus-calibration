@@ -13,6 +13,10 @@ pub exec fn init_vec_u8(n: usize) -> (res: Vec<u8>)
     let mut i: usize = 0;
     let mut ret: Vec<u8> = Vec::new();
     while i < n
+        invariant
+            i <= n,
+            ret@.len() == i,
+        decreases n - i,
     {
         ret.push(0);
         i = i + 1
