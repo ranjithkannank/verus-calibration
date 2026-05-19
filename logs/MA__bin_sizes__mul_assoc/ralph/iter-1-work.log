@@ -1,0 +1,9 @@
+Attempt 1 succeeded. The proof closes with a single `assert((x * y) * z == y * (x * z)) by (nonlinear_arith);` inside the proof fn body. Verus reports `2 verified, 0 errors`.
+
+Summary:
+- **Sub-task tackled:** Design sub-task 1 — empty-body confirmed to fail (`postcondition not satisfied`), then closed in one shot with the design's recommended one-line nonlinear-arith proof.
+- **Status:** `verus_passed`
+- **Commit:** `dcb66b5` — `MA__bin_sizes__mul_assoc attempt-1: close (x*y)*z == y*(x*z) with one by(nonlinear_arith) assert`
+- **Tree:** clean for this exercise (the unrelated `logs/counter_filler/orchestrator.log` modification is out of scope and was not staged).
+
+Ready to hand to reviewer.
