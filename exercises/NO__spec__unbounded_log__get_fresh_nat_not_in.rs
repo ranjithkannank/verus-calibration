@@ -130,5 +130,25 @@ pub proof fn get_fresh_nat_not_in(reqs: Set<ReqId>, combiner: Map<NodeId, Combin
         !reqs.contains(get_fresh_nat(reqs, combiner)),
         combiner_request_id_fresh(combiner, get_fresh_nat(reqs, combiner)),
 {
+    // Show the union of reqs and combiner_request_ids(combiner) is finite.
+    combiner_request_ids_finite(combiner);
+    let bad = reqs + combiner_request_ids(combiner);
+    assert(bad.finite());
+
+    // Pull a fresh nat from outside the finite "bad" set.
+    let r = element_outside_set(bad);
+    assert(!bad.contains(r));
+    // Set union membership: r is in neither side.
+    assert(!reqs.contains(r));
+    assert(!combiner_request_ids(combiner).contains(r));
+
+    // Bridge to the freshness predicate via the operator-axiomatized helper.
+    combiner_request_ids_not_contains(combiner, r);
+    assert(combiner_request_id_fresh(combiner, r));
+
+    // Existential witness so that `choose` in `get_fresh_nat` returns a valid n.
+    assert(exists|n: nat| !reqs.contains(n) && combiner_request_id_fresh(combiner, n)) by {
+        assert(!reqs.contains(r) && combiner_request_id_fresh(combiner, r));
+    };
 }
 }
