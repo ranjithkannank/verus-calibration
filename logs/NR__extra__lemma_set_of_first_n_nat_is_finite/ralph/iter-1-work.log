@@ -1,0 +1,14 @@
+Done. Attempt 1 succeeded.
+
+**Summary:**
+- **Exercise:** `NR__extra__lemma_set_of_first_n_nat_is_finite`
+- **Status:** `verus_passed` (1 verified, 0 errors)
+- **Approach:** Structural induction on `n` with `decreases n`.
+  - Base (`n == 0`): `=~=` extensional equality with `Set::<nat>::empty()`.
+  - Step (`n > 0`): recurse on `m = (n-1) as nat`, then assert `Set::new(|i: nat| i < n) =~= Set::new(|i: nat| i < m).insert(m)`. Finiteness propagates through `.insert` via the default broadcast axiom.
+- **Commit:** `73cd4ea`
+- **Working tree:** clean (the unrelated `AL__a_submap_of_a_finite_map_is_finite*` files are pre-existing untracked scaffold for a different exercise).
+
+The unrelated untracked `AL__a_submap_of_a_finite_map_is_finite*` files belong to a different exercise and were already untracked before this invocation; I did not touch them.
+
+Handing back to the orchestrator for reviewer pass.
