@@ -1,4 +1,5 @@
 use vstd::prelude::*;
+use vstd::assert_sets_equal;
 fn main() {}
 verus! {
 
