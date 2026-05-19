@@ -1,0 +1,10 @@
+Review complete. **Conclusion: APPROVE.**
+
+The diff against `spec-frozen-AL__a_submap_of_a_finite_map_is_finite` is a clean two-line addition inside the previously empty proof body:
+
+```rust
++    assert(m1.dom().subset_of(m2.dom()));
++    vstd::set_lib::lemma_len_subset(m1.dom(), m2.dom());
+```
+
+All five checklist items pass: `requires`/`ensures` are byte-identical, no pre-existing `spec fn`s exist to alter, no bypass tokens were introduced, no new `requires` clauses were added, and there are no `closed`/`open` spec toggles. Review committed as `8be1c4c`.
