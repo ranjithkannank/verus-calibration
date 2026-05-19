@@ -1,0 +1,12 @@
+error: postcondition not satisfied
+  --> /Users/ranjith/Documents/projects/untitled folder/verus-calibration/exercises/MA__bin_sizes__shift_is_div.rs:20:13
+   |
+18 | proof fn shift_is_div(x:u64, shift:u64)
+   |       --------------------------------- at the end of the function body
+19 |     requires 0 <= shift < 64,
+20 |     ensures x >> shift == x as nat / pow2(shift as int),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+
+verification results:: 1 verified, 1 errors
+error: aborting due to 1 previous error
+
