@@ -100,29 +100,57 @@ else
 fi
 
 # --- 1. Cheat-token check on every witness file ------------------------------
+#
+# Witness must not introduce verification-bypass tokens *beyond what the
+# corresponding exercise file already contains as baseline scaffold*.
+# External tasks from VeruSAGE-Bench legitimately ship with
+# `external_body` markers on opaque-constant declarations and on
+# axiomatized helper proof fns; the witness preserves those byte-for-byte.
+# The check counts occurrences in the witness and subtracts the count
+# from the paired exercise file: if the witness has strictly more, the
+# excess is operator-introduced cheating.
 
 CHEAT_RC=0
-check_cheat_file() {
+pair_for_witness() {
+  # Map witness file → paired exercise file (single-file or multi-file).
+  local wf="$1"
+  if [ "$LAYOUT" = "single" ]; then
+    echo "$EXFILE_SINGLE"
+  else
+    echo "$EXDIR_MULTI/$(basename "$wf")"
+  fi
+}
+check_cheat_pair() {
   local file="$1"
   local pattern="$2"
   local label="$3"
-  if grep -nE "$pattern" "$file" >/dev/null; then
-    echo "  [cheat] $file contains '$label':" >&2
+  local pair
+  pair=$(pair_for_witness "$file")
+  local wt_count ex_count
+  wt_count=$(grep -cE "$pattern" "$file" 2>/dev/null || echo 0)
+  if [ -f "$pair" ]; then
+    ex_count=$(grep -cE "$pattern" "$pair" 2>/dev/null || echo 0)
+  else
+    ex_count=0
+  fi
+  if [ "$wt_count" -gt "$ex_count" ]; then
+    echo "  [cheat] $file contains $((wt_count - ex_count)) more '$label' than $pair:" >&2
     grep -nE "$pattern" "$file" | sed 's/^/    /' >&2
     CHEAT_RC=1
   fi
 }
 for wf in "${WITNESS_FILES[@]}"; do
-  check_cheat_file "$wf" '\bassume[[:space:]]*\('     'assume(...)'
-  check_cheat_file "$wf" 'external_body'              'external_body'
-  check_cheat_file "$wf" 'unreachable!\(\)'           'unreachable!()'
-  check_cheat_file "$wf" '\bpanic!\('                 'panic!(...)'
-  check_cheat_file "$wf" 'assume_specification'       'assume_specification'
+  check_cheat_pair "$wf" '\bassume[[:space:]]*\('     'assume(...)'
+  check_cheat_pair "$wf" 'external_body'              'external_body'
+  check_cheat_pair "$wf" 'unreachable!\(\)'           'unreachable!()'
+  check_cheat_pair "$wf" '\bpanic!\('                 'panic!(...)'
+  check_cheat_pair "$wf" 'assume_specification'       'assume_specification'
 done
 
 if [ $CHEAT_RC -ne 0 ]; then
   echo >&2
-  echo "Witness uses verification-bypass tokens; rewrite without them." >&2
+  echo "Witness introduces more verification-bypass tokens than the paired" >&2
+  echo "exercise file carries as baseline. Rewrite the excess." >&2
   exit 3
 fi
 

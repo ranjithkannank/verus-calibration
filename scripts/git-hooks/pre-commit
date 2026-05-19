@@ -55,7 +55,40 @@ while IFS= read -r f; do
     *) continue ;;
   esac
 
-  added=$(git diff --cached -- "$f" | grep -E '^\+[^+]' || true)
+  # Derive the exercise name + spec-frozen tag the same way section 3 does.
+  # If the spec-frozen tag does not yet exist, this is the scaffold commit:
+  # every line is "added" from `git diff --cached`'s perspective, so the
+  # cheat-token check would flag baseline scaffold content (e.g.
+  # `external_body` markers on opaque-constant declarations in external
+  # tasks from VeruSAGE-Bench). Treat the scaffold commit as operator
+  # territory and skip cheat-token detection; subsequent commits diff
+  # against the spec-frozen tag, so any genuinely new cheat tokens are
+  # still caught.
+  case "$f" in
+    exercises/*/*.rs)
+      ex_dir=$(echo "$f" | cut -d/ -f2)
+      case "$ex_dir" in *_witness) continue ;; esac
+      ex_name="$ex_dir"
+      ;;
+    exercises/*.rs)
+      ex_name=$(basename "$f" .rs)
+      case "$ex_name" in *_witness) continue ;; esac
+      ;;
+  esac
+  ex_tag="spec-frozen-${ex_name}"
+
+  if git rev-parse --verify --quiet "$ex_tag" >/dev/null 2>&1; then
+    # Established exercise: diff against the frozen tag.
+    added=$(git diff "${ex_tag}"..HEAD -- "$f" 2>/dev/null | grep -E '^\+[^+]' || true)
+    # If the file is staged but not yet in HEAD (e.g. unusual race), fall
+    # back to the cached diff to avoid missing introductions.
+    if [ -z "$added" ]; then
+      added=$(git diff --cached -- "$f" | grep -E '^\+[^+]' || true)
+    fi
+  else
+    # Scaffold commit — no prior baseline. Skip cheat-token detection.
+    added=""
+  fi
   [ -z "$added" ] && continue
 
   if echo "$added" | grep -qE '\bassume[[:space:]]*\('; then
