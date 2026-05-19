@@ -31,6 +31,10 @@ pub exec const MAX_PHYADDR: usize ensures MAX_PHYADDR == MAX_PHYADDR_SPEC {
 pub proof fn lemma_maxphyaddr_facts()
     ensures 0xFFFFFFFF <= MAX_PHYADDR <= 0xFFFFFFFFFFFFF
 {
+    axiom_max_phyaddr_width_facts();
+    assert(1usize << 32 == 0x100000000) by (compute);
+    assert(1usize << 52 == 0x10000000000000) by (compute);
+    assert(forall|m: usize, n: usize| n <= m < 64 ==> 1usize << n <= 1usize << m) by (bit_vector);
 }
 
 
