@@ -95,6 +95,15 @@ case "$EXERCISE" in
   # External-validity tests (VeruSAGE-Bench). See AGENTS.md.
   MA__bin_sizes__mul_assoc) ATTEMPT_CAP=15 ;;
   VE__utils__init_vec_u8)   ATTEMPT_CAP=15 ;;
+  # Batch 2 (neutral design notes — methodology probe, not harness probe):
+  IR__seq_is_unique__singleton_seq_to_set_is_singleton_set) ATTEMPT_CAP=15 ;;
+  NR__extra__lemma_set_of_first_n_nat_is_finite)            ATTEMPT_CAP=15 ;;
+  AL__a_submap_of_a_finite_map_is_finite)                   ATTEMPT_CAP=15 ;;
+  MA__bin_sizes__shift_is_div)                              ATTEMPT_CAP=20 ;;
+  IR__verus_extra__lemma_if_everything_in_seq_satisfies_filter_then_filter_is_identity) ATTEMPT_CAP=15 ;;
+  NR__definitions_u__lemma_maxphyaddr_facts)                ATTEMPT_CAP=20 ;;
+  OS__array__impl4__init2none)                              ATTEMPT_CAP=15 ;;
+  NO__spec__unbounded_log__get_fresh_nat_not_in)            ATTEMPT_CAP=25 ;;
   *) echo "unknown exercise: $EXERCISE" >&2; exit 2 ;;
 esac
 

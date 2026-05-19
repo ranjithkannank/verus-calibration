@@ -112,6 +112,19 @@ Honest scope: AGENTS.md's "Discovered patterns" section accumulates per-exercise
 17. `exercises/MA__bin_sizes__mul_assoc.rs` — first external-validity task. Pure `proof fn` synthesis: `(x*y)*z == y*(x*z)` over `nat`. Upstream prefix `MA` = memory-allocator (Verus-verified mimalloc port). Smallest task in the benchmark by byte count (136 B). Iteration cap 15. Ground-truth witness closes via `by (nonlinear_arith)`.
 18. `exercises/VE__utils__init_vec_u8.rs` — second external-validity task. Exec function with a `while` loop that needs an `invariant` + `decreases` clause to verify. Upstream prefix `VE` = vest (verified serializer). Closest match to our existing methodology shape (exec + loop invariant, same family as `binary_search`). Iteration cap 15.
 
+### Batch 2 — methodology probe (neutral design notes)
+
+Items 17–18 above shipped with design notes that named the relevant Verus tooling family (`by (nonlinear_arith)` and "loop needs invariant + decreases"). That made them harness probes, not methodology probes. Batch 2 corrects the test design: each task's `.design.md` states the obligation and a standard sub-task ordering only — no Verus tooling-family names, no lemma names, no proof-structure hints, no cross-references to internal exercises by name. AGENTS.md's "Discovered patterns" section is left in place because it is part of the methodology under test.
+
+19. `exercises/IR__seq_is_unique__singleton_seq_to_set_is_singleton_set.rs` — Pure proof fn: `seq![x].to_set() == set![x]`. Upstream prefix `IR` = ironkv. 171 B. Iteration cap 15.
+20. `exercises/NR__extra__lemma_set_of_first_n_nat_is_finite.rs` — Pure proof fn: `Set::new(|i: nat| i < n).finite()`. Upstream prefix `NR` = nrkernel. 180 B. Iteration cap 15.
+21. `exercises/AL__a_submap_of_a_finite_map_is_finite.rs` — Pure proof fn: submap-of-finite-map is finite. Upstream prefix `AL` = anvil-library. 242 B. Iteration cap 15.
+22. `exercises/MA__bin_sizes__shift_is_div.rs` — Pure proof fn: `x >> shift == x as nat / pow2(shift as int)`. 308 B. Different family from `mul_assoc` (bit-shift / division recursion, not nonlinear chain). Iteration cap 20.
+23. `exercises/IR__verus_extra__lemma_if_everything_in_seq_satisfies_filter_then_filter_is_identity.rs` — Pure proof fn: if every element satisfies a predicate, `Seq::filter(pred) == self`. 309 B. Iteration cap 15.
+24. `exercises/NR__definitions_u__lemma_maxphyaddr_facts.rs` — Pure proof fn: `0xFFFFFFFF <= MAX_PHYADDR <= 0xFFFFFFFFFFFFF`, where MAX_PHYADDR is computed from an axiomatized bit-width range. 879 B. Mix of compute, bit_vector, and axiom calls. Iteration cap 20.
+25. `exercises/OS__array__impl4__init2none.rs` — Exec function: `init2none` zeroes out an `Array<Option<T>, N>` via a `for i in 0..N` loop that needs an invariant. Upstream prefix `OS` = atmosphere (OS kernel). Second exec data point on the external-validity track. 1132 B. Iteration cap 15.
+26. `exercises/NO__spec__unbounded_log__get_fresh_nat_not_in.rs` — Pure proof fn: existence of a fresh request id outside a finite set of in-flight requests. Upstream prefix `NO` = node-replication. 3768 B. Stress test on size; uses multiple operator-axiom helper lemmas already declared in the task file. Iteration cap 25.
+
 ## Multi-agent workflow (brief)
 
 The full state machine and how the human operator drives it is in `ORCHESTRATION.md`. In short:
