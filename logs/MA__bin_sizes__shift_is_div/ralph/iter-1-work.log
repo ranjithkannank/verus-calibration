@@ -1,0 +1,6 @@
+Attempt 1 succeeded on the first try. Summary:
+
+- **Sub-task:** Combined sub-tasks 1+2 from the design note (capture scaffold rejection, then smallest body).
+- **Proof strategy:** Reuse `vstd::bits::lemma_u64_shr_is_div` (which proves the bit-shift-to-division fact against vstd's `pow2: nat -> nat`), then bridge to the exercise's local `pow2: int -> nat` with a small inductive lemma.
+- **Result:** `verification results:: 3 verified, 0 errors`, exit 0.
+- **Status:** `verus_passed`, tree clean, ready for reviewer.
